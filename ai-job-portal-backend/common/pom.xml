@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.prahlad.aijobportal</groupId>
+        <artifactId>ai-job-portal-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>common</artifactId>
+    <packaging>jar</packaging>
+    <name>Common Module</name>
+    <description>
+        Shared, framework-agnostic cross-cutting library used by all microservices.
+        Contains ONLY: common API response wrapper, global exception models,
+        common constants, correlation ID support, and generic pagination
+        response DTOs. Must NEVER contain business logic, JPA entities,
+        repositories, services, or controllers specific to any feature.
+    </description>
+
+    <dependencies>
+        <!-- Needed for ResponseEntity helpers, HttpStatus, MDC, Servlet filter base classes -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+
+        <!-- Only spring-data-commons (not full JPA) is needed: PageResponse wraps
+             org.springframework.data.domain.Page<T>, a persistence-agnostic type
+             also used by Spring Data MongoDB/Redis/etc., not JPA-specific. -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-commons</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+</project>

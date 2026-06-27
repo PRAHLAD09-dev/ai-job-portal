@@ -1,0 +1,29 @@
+# Environment
+.env
+
+# Maven
+target/
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Node (frontend, future phase)
+node_modules/
+dist/
+build/
+
+# Docker volumes data (if mounted locally instead of named volumes)
+docker/volumes/
