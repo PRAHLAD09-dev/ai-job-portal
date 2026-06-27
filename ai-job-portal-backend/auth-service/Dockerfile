@@ -1,29 +1,23 @@
 # Multi-stage build: compile with Maven, run with a slim JRE image.
 #
 # This Dockerfile MUST be built with the REPOSITORY ROOT as context
-# (see docker-compose.yml: `context: .`, `dockerfile: api-gateway/Dockerfile`),
+# (see docker-compose.yml: `context: .`, `dockerfile: auth-service/Dockerfile`),
 # because the parent pom.xml is a multi-module reactor project. Maven's
 # reactor resolves the FULL <modules> list declared in the parent pom.xml
 # at startup — not just the modules required by -pl/-am — so every
 # sibling module's pom.xml must be present on disk even if its source is
 # never copied in or compiled. Only the pom.xml files are needed for
 # reactor resolution; the actual `src` directories are copied/built only
-# for the modules this image actually needs (common + api-gateway),
+# for the modules this image actually needs (common + auth-service),
 # keeping the image build fast and the parent pom.xml untouched.
-#
-# Note: api-gateway does not actually depend on the `common` module's
-# artifact at compile time (Gateway is reactive/WebFlux; common is
-# servlet-based — see architecture notes elsewhere in the project), but
-# `common`'s pom.xml is still copied here for the same reactor-resolution
-# reason as discovery-server/config-server/api-gateway's own poms.
 
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /workspace
 
 # Step 1: copy the parent POM and EVERY module's POM (lightweight — no
 # source yet). This lets the Maven reactor fully resolve the module list
-# declared in the parent pom.xml without requiring discovery-server's or
-# config-server's source to be present.
+# declared in the parent pom.xml without requiring discovery-server's,
+# config-server's, or api-gateway's source to be present.
 COPY pom.xml .
 COPY common/pom.xml common/pom.xml
 COPY discovery-server/pom.xml discovery-server/pom.xml
@@ -33,22 +27,22 @@ COPY auth-service/pom.xml auth-service/pom.xml
 
 # Step 2: pre-fetch dependencies for just this module + its dependency
 # (common), for better Docker layer caching on subsequent builds.
-RUN mvn -q -pl api-gateway -am dependency:go-offline -DskipTests
+RUN mvn -q -pl auth-service -am dependency:go-offline -DskipTests
 
 # Step 3: now copy only the source actually needed to build this image.
 COPY common/src common/src
-COPY api-gateway/src api-gateway/src
+COPY auth-service/src auth-service/src
 
 # Step 4: build only this module and its required dependency module(s).
-RUN mvn -q -pl api-gateway -am clean package -DskipTests
+RUN mvn -q -pl auth-service -am clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 RUN apk add --no-cache wget
 
-COPY --from=build /workspace/api-gateway/target/*.jar app.jar
+COPY --from=build /workspace/auth-service/target/*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8081
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

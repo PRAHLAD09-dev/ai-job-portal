@@ -4,7 +4,9 @@
 #
 # Route definitions for business microservices are added incrementally as
 # each service is implemented (Auth, Candidate, Recruiter, Job, Application,
-# AI, Notification). Only infrastructure-relevant routing exists for now.
+# AI, Notification). The auth-service route below was added once Auth
+# Service was implemented and registered in Eureka; remaining business
+# service routes will be added the same way in their own development phase.
 
 server:
   port: 8080
@@ -18,12 +20,10 @@ spring:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       routes:
-        # Placeholder route kept disabled until Auth Service exists.
-        # Uncomment and adjust once auth-service is registered in Eureka.
-        # - id: auth-service
-        #   uri: lb://AUTH-SERVICE
-        #   predicates:
-        #     - Path=/api/v1/auth/**
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/api/v1/auth/**
 
       globalcors:
         cors-configurations:

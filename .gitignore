@@ -61,24 +61,9 @@ application-secret.yml
 *.bak
 *.swp
 
-############################
-# AI Planning Documents (Local Only)
-############################
-
-PROJECT_RULES.md
-PROJECT_SPECIFICATION.md
-DECISIONS.md
-BACKEND_ROADMAP.md
-FRONTEND_ROADMAP.md
 
 ############################
-# Claude Prompt Library (Local Only)
-############################
-
-PROMPTS/
-
-############################
-# Optional Local Notes
+# Local Notes
 ############################
 
 NOTES.md
