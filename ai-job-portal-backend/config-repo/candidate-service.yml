@@ -1,0 +1,81 @@
+# candidate-service.yml — fetched by the Candidate Service at startup
+# (spring.application.name=candidate-service in the service's bootstrap
+# config tells Config Server to merge this file with the shared
+# application.yml).
+#
+# All secrets, credentials, and environment-specific values are sourced
+# exclusively from environment variables — never hardcoded here.
+
+server:
+  port: 8082
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${CANDIDATE_DB_HOST:localhost}:${CANDIDATE_DB_PORT:5432}/${CANDIDATE_DB_NAME:candidate_service_db}
+    username: ${CANDIDATE_DB_USERNAME:${POSTGRES_USER}}
+    password: ${CANDIDATE_DB_PASSWORD:${POSTGRES_PASSWORD}}
+    driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: ${RESUME_MAX_FILE_SIZE:10MB}
+      max-request-size: ${RESUME_MAX_REQUEST_SIZE:10MB}
+
+# ---- JWT ----
+# Must match the EXACT same secret/issuer configured on the Auth Service
+# (this service only verifies tokens, never issues them). No default
+# value on purpose: fail fast at startup rather than silently trust an
+# unset/guessable key.
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: ai-job-portal-auth-service
+
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME}
+    api-key: ${CLOUDINARY_API_KEY}
+    api-secret: ${CLOUDINARY_API_SECRET}
+
+  resume:
+    max-file-size-bytes: ${RESUME_MAX_FILE_SIZE_BYTES:10485760}   # 10 MB
+    allowed-formats: pdf,doc,docx
+    cloudinary-folder: ${RESUME_CLOUDINARY_FOLDER:ai-job-portal/resumes}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{correlationId}]"
+
+# Binds the "candidateService" circuit breaker/retry instance (used when
+# calling Auth Service via Feign) to the shared "default" Resilience4j
+# config declared in config-repo/application.yml.
+resilience4j:
+  circuitbreaker:
+    instances:
+      candidateService:
+        baseConfig: default
+  retry:
+    instances:
+      candidateService:
+        baseConfig: default
