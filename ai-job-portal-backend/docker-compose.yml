@@ -280,3 +280,54 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+
+  # ----------------------------------------------------------------------
+  # Recruiter Service — owns Company, Recruiter Profile, and Company
+  # Verification. Depends on Config Server, Eureka, Postgres, Kafka, and
+  # Auth Service (queried via Feign/Eureka at runtime) being available.
+  # ----------------------------------------------------------------------
+  recruiter-service:
+    build:
+      context: .
+      dockerfile: recruiter-service/Dockerfile
+    container_name: ai-job-portal-recruiter-service
+    restart: unless-stopped
+    ports:
+      - "${RECRUITER_SERVICE_PORT:-8083}:8083"
+    environment:
+      CONFIG_SERVER_URI: http://config-server:8888
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      RECRUITER_DB_HOST: postgres
+      RECRUITER_DB_PORT: 5432
+      RECRUITER_DB_NAME: recruiter_service_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
+      COMPANY_ASSET_MAX_FILE_SIZE: ${COMPANY_ASSET_MAX_FILE_SIZE:-5MB}
+      COMPANY_ASSET_MAX_REQUEST_SIZE: ${COMPANY_ASSET_MAX_REQUEST_SIZE:-5MB}
+      COMPANY_ASSET_MAX_FILE_SIZE_BYTES: ${COMPANY_ASSET_MAX_FILE_SIZE_BYTES:-5242880}
+      COMPANY_LOGO_CLOUDINARY_FOLDER: ${COMPANY_LOGO_CLOUDINARY_FOLDER:-ai-job-portal/company-logos}
+      COMPANY_BANNER_CLOUDINARY_FOLDER: ${COMPANY_BANNER_CLOUDINARY_FOLDER:-ai-job-portal/company-banners}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - ai-job-portal-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s

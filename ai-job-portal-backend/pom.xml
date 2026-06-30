@@ -37,6 +37,7 @@
         <module>api-gateway</module>
         <module>auth-service</module>
         <module>candidate-service</module>
+        <module>recruiter-service</module>
     </modules>
 
     <dependencyManagement>

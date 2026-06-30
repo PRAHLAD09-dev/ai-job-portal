@@ -29,6 +29,14 @@ spring:
           uri: lb://CANDIDATE-SERVICE
           predicates:
             - Path=/api/v1/candidate/**
+        - id: recruiter-service-companies
+          uri: lb://RECRUITER-SERVICE
+          predicates:
+            - Path=/api/v1/companies/**
+        - id: recruiter-service-profile
+          uri: lb://RECRUITER-SERVICE
+          predicates:
+            - Path=/api/v1/recruiter/**
 
       globalcors:
         cors-configurations:
