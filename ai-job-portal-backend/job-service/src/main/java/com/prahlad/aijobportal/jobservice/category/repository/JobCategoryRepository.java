@@ -1,0 +1,12 @@
+package com.prahlad.aijobportal.jobservice.category.repository;
+
+import com.prahlad.aijobportal.jobservice.category.entity.JobCategory;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.Optional;
+import java.util.UUID;
+
+public interface JobCategoryRepository extends JpaRepository<JobCategory, UUID> {
+
+    Optional<JobCategory> findBySlug(String slug);
+}

@@ -331,3 +331,47 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+
+  # ----------------------------------------------------------------------
+  # Job Service — owns Jobs, Job Categories, Saved Jobs, Job Alerts
+  # ----------------------------------------------------------------------
+  job-service:
+    build:
+      context: .
+      dockerfile: job-service/Dockerfile
+    container_name: ai-job-portal-job-service
+    restart: unless-stopped
+    ports:
+      - "${JOB_SERVICE_PORT:-8084}:8084"
+    environment:
+      CONFIG_SERVER_URI: http://config-server:8888
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      JOB_DB_HOST: postgres
+      JOB_DB_PORT: 5432
+      JOB_DB_NAME: job_service_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      recruiter-service:
+        condition: service_healthy
+    networks:
+      - ai-job-portal-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s

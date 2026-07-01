@@ -38,6 +38,7 @@
         <module>auth-service</module>
         <module>candidate-service</module>
         <module>recruiter-service</module>
+        <module>job-service</module>
     </modules>
 
     <dependencyManagement>
