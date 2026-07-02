@@ -375,3 +375,51 @@ services:
       timeout: 5s
       retries: 5
       start_period: 40s
+
+  # ----------------------------------------------------------------------
+  # Application Service — Job Applications, Timeline, Hiring Workflow
+  # ----------------------------------------------------------------------
+  application-service:
+    build:
+      context: .
+      dockerfile: application-service/Dockerfile
+    container_name: ai-job-portal-application-service
+    restart: unless-stopped
+    ports:
+      - "${APPLICATION_SERVICE_PORT:-8085}:8085"
+    environment:
+      CONFIG_SERVER_URI: http://config-server:8888
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      APPLICATION_DB_HOST: postgres
+      APPLICATION_DB_PORT: 5432
+      APPLICATION_DB_NAME: application_service_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      job-service:
+        condition: service_healthy
+      candidate-service:
+        condition: service_healthy
+      recruiter-service:
+        condition: service_healthy
+    networks:
+      - ai-job-portal-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s

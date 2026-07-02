@@ -45,6 +45,14 @@ spring:
           uri: lb://JOB-SERVICE
           predicates:
             - Path=/api/v1/job-categories/**
+        - id: application-service-candidate
+          uri: lb://APPLICATION-SERVICE
+          predicates:
+            - Path=/api/v1/applications/**
+        - id: application-service-recruiter
+          uri: lb://APPLICATION-SERVICE
+          predicates:
+            - Path=/api/v1/recruiter/applications/**
 
       globalcors:
         cors-configurations:

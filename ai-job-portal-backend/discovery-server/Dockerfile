@@ -27,6 +27,7 @@ COPY auth-service/pom.xml auth-service/pom.xml
 COPY candidate-service/pom.xml candidate-service/pom.xml
 COPY recruiter-service/pom.xml recruiter-service/pom.xml
 COPY job-service/pom.xml job-service/pom.xml
+COPY application-service/pom.xml application-service/pom.xml
 
 # Step 2: pre-fetch dependencies for just this module + its dependency
 # (common), for better Docker layer caching on subsequent builds.

@@ -39,6 +39,7 @@
         <module>candidate-service</module>
         <module>recruiter-service</module>
         <module>job-service</module>
+        <module>application-service</module>
     </modules>
 
     <dependencyManagement>
