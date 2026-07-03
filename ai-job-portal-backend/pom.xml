@@ -40,6 +40,7 @@
         <module>recruiter-service</module>
         <module>job-service</module>
         <module>application-service</module>
+        <module>ai-service</module>
     </modules>
 
     <dependencyManagement>

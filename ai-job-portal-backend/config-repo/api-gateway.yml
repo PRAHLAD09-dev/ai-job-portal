@@ -53,6 +53,10 @@ spring:
           uri: lb://APPLICATION-SERVICE
           predicates:
             - Path=/api/v1/recruiter/applications/**
+        - id: ai-service
+          uri: lb://AI-SERVICE
+          predicates:
+            - Path=/api/v1/ai/**
 
       globalcors:
         cors-configurations:

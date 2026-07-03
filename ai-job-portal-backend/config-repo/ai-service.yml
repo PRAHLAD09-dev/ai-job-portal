@@ -1,0 +1,100 @@
+# ai-service.yml — fetched by the AI Service at startup
+# (spring.application.name=ai-service in the service's bootstrap
+# config tells Config Server to merge this file with the shared
+# application.yml).
+#
+# All secrets, credentials, and environment-specific values are sourced
+# exclusively from environment variables — never hardcoded here.
+
+server:
+  port: 8086
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${AI_DB_HOST:localhost}:${AI_DB_PORT:5432}/${AI_DB_NAME:ai_service_db}
+    username: ${AI_DB_USERNAME:${POSTGRES_USER}}
+    password: ${AI_DB_PASSWORD:${POSTGRES_PASSWORD}}
+    driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+# ---- JWT ----
+# Must match the EXACT same secret/issuer configured on the Auth Service
+# (this service only verifies tokens, never issues them). No default
+# value on purpose: fail fast at startup rather than silently trust an
+# unset/guessable key.
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: ai-job-portal-auth-service
+
+  # ---- Gemini API ---- (DECISIONS.md: "Provider-Independent Design")
+  # No default api-key on purpose: fail fast at startup rather than
+  # silently call Gemini with an empty key.
+  gemini:
+    api-key: ${GEMINI_API_KEY}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+    model: ${GEMINI_MODEL:gemini-1.5-flash}
+    temperature: ${GEMINI_TEMPERATURE:0.4}
+    max-output-tokens: ${GEMINI_MAX_OUTPUT_TOKENS:2048}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{correlationId}]"
+
+# Binds the "aiService" circuit breaker/retry instance (used when
+# calling Candidate/Job/Recruiter/Application Service via Feign) to the
+# shared "default" Resilience4j config declared in
+# config-repo/application.yml. The "geminiClient" instance (calls to
+# the external Gemini API) gets its own, more lenient config plus a
+# Bulkhead and TimeLimiter, since it is a slower, rate-limited external
+# dependency rather than an internal service call.
+resilience4j:
+  circuitbreaker:
+    instances:
+      aiService:
+        baseConfig: default
+      geminiClient:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        permittedNumberOfCallsInHalfOpenState: 3
+        waitDurationInOpenState: 15s
+        failureRateThreshold: 50
+  retry:
+    instances:
+      aiService:
+        baseConfig: default
+      geminiClient:
+        maxAttempts: 2
+        waitDuration: 1s
+  bulkhead:
+    instances:
+      geminiClient:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 2s
+  timelimiter:
+    instances:
+      aiService:
+        baseConfig: default
+      geminiClient:
+        timeoutDuration: 20s
