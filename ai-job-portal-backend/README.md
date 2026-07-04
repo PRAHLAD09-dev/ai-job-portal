@@ -662,9 +662,9 @@ Interested in:
 - Cloud Native Applications
 - AI Powered Software Development
 
-GitHub: **https://github.com/your-github-username**
+GitHub: **https://github.com/PRAHLAD09-dev**
 
-LinkedIn: **https://linkedin.com/in/your-linkedin-profile**
+LinkedIn: **https://in.linkedin.com/in/prahlad-bhakat**
 
 ---
 
