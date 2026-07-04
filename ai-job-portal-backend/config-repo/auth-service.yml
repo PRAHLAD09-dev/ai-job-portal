@@ -58,6 +58,14 @@ app:
   mail:
     from: ${MAIL_FROM:no-reply@aijobportal.com}
 
+  # ---- Internal service-to-service authentication ----
+  # Validates the shared secret header sent by InternalServiceAuthFilter
+  # callers (currently: Notification Service resolving a user's e-mail
+  # from a Kafka event's userId). No default value on purpose: fail fast
+  # at startup rather than silently accept a guessable key.
+  internal:
+    service-token: ${INTERNAL_SERVICE_TOKEN}
+
 springdoc:
   api-docs:
     path: /v3/api-docs

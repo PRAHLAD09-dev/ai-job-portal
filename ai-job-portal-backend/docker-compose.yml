@@ -210,6 +210,7 @@ services:
       MAIL_FROM: ${MAIL_FROM:-no-reply@aijobportal.com}
       FRONTEND_VERIFY_EMAIL_URL: ${FRONTEND_VERIFY_EMAIL_URL:-http://localhost:5173/verify-email}
       FRONTEND_RESET_PASSWORD_URL: ${FRONTEND_RESET_PASSWORD_URL:-http://localhost:5173/reset-password}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
     depends_on:
       config-server:
         condition: service_healthy
@@ -470,6 +471,62 @@ services:
       - ai-job-portal-network
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8086/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ----------------------------------------------------------------------
+  # Notification Service — owns Email Notifications, In-App Notifications,
+  # and Notification Preferences. Consumes Kafka events from every other
+  # business service; calls Auth Service via Feign (internal service
+  # token) to resolve recipient e-mail addresses. Depends on Config
+  # Server, Eureka, Postgres, Redis, Kafka, and Auth Service being
+  # available at startup.
+  # ----------------------------------------------------------------------
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    container_name: ai-job-portal-notification-service
+    restart: unless-stopped
+    ports:
+      - "${NOTIFICATION_SERVICE_PORT:-8087}:8087"
+    environment:
+      CONFIG_SERVER_URI: http://config-server:8888
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      NOTIFICATION_DB_HOST: postgres
+      NOTIFICATION_DB_PORT: 5432
+      NOTIFICATION_DB_NAME: notification_service_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@aijobportal.com}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    networks:
+      - ai-job-portal-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health"]
       interval: 15s
       timeout: 5s
       retries: 5

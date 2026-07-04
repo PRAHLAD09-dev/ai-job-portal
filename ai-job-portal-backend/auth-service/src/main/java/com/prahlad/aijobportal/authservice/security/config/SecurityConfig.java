@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.authservice.security.config;
 
+import com.prahlad.aijobportal.authservice.security.filter.InternalServiceAuthFilter;
 import com.prahlad.aijobportal.authservice.security.filter.JwtAuthenticationFilter;
 import com.prahlad.aijobportal.authservice.security.filter.RestAuthenticationEntryPoint;
 import com.prahlad.aijobportal.common.constant.CommonConstants;
@@ -25,6 +26,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * over account-status checks (email verification, lockout) before and
  * after the credential check. No {@code AuthenticationManager} bean is
  * therefore declared here.
+ *
+ * {@code /auth/internal/**} is a separate, additive concern: it is
+ * authenticated by {@link InternalServiceAuthFilter} via a shared
+ * service-to-service secret (never a user bearer token) and restricted
+ * to {@code ROLE_INTERNAL_SERVICE}, so it is deliberately excluded from
+ * both PUBLIC_ENDPOINTS and the normal JWT-authenticated catch-all. It
+ * must also never be exposed through the API Gateway's public routes.
  */
 @Configuration
 @EnableWebSecurity
@@ -32,6 +40,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final InternalServiceAuthFilter internalServiceAuthFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
 
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -48,6 +57,8 @@ public class SecurityConfig {
             "/v3/api-docs/**"
     };
 
+    private static final String INTERNAL_ENDPOINTS = CommonConstants.API_BASE_PATH + "/auth/internal/**";
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -62,8 +73,10 @@ public class SecurityConfig {
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(INTERNAL_ENDPOINTS).hasRole(InternalServiceAuthFilter.ROLE_INTERNAL_SERVICE)
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(internalServiceAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

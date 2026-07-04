@@ -1,0 +1,112 @@
+# notification-service.yml — fetched by the Notification Service at
+# startup (spring.application.name=notification-service in the
+# service's bootstrap config tells Config Server to merge this file
+# with the shared application.yml).
+#
+# All secrets, credentials, and environment-specific values are sourced
+# exclusively from environment variables (ultimately populated from the
+# project's .env file via docker-compose) — never hardcoded here.
+
+server:
+  port: 8087
+
+spring:
+  datasource:
+    url: jdbc:postgresql://${NOTIFICATION_DB_HOST:localhost}:${NOTIFICATION_DB_PORT:5432}/${NOTIFICATION_DB_NAME:notification_service_db}
+    username: ${NOTIFICATION_DB_USERNAME:${POSTGRES_USER}}
+    password: ${NOTIFICATION_DB_PASSWORD:${POSTGRES_PASSWORD}}
+    driver-class-name: org.postgresql.Driver
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+
+  mail:
+    host: ${SMTP_HOST}
+    port: ${SMTP_PORT}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+
+  # Overrides the shared JsonDeserializer value-deserializer declared in
+  # config-repo/application.yml with StringDeserializer, scoped to THIS
+  # service only. NotificationEventConsumer reads every event payload as
+  # a raw JSON string and parses it manually with a plain ObjectMapper
+  # into its own locally-declared mirror DTOs (see AiEventConsumer's
+  # javadoc for the same rationale) — the producer's __TypeId__ header
+  # would otherwise reference a class that does not exist on this
+  # service's classpath.
+  kafka:
+    consumer:
+      group-id: notification-service-group
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+# ---- JWT ----
+# Must match the EXACT same secret/issuer configured on the Auth Service
+# (this service only verifies tokens, never issues them). No default
+# value on purpose: fail fast at startup rather than silently trust an
+# unset/guessable key.
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    issuer: ai-job-portal-auth-service
+
+  # ---- Internal service-to-service authentication ----
+  # Shared secret attached to every outgoing Feign call this service
+  # makes to Auth Service's internal-only user lookup endpoint, since a
+  # Kafka listener has no incoming bearer token to forward. Must match
+  # the same secret configured on the Auth Service. No default value on
+  # purpose: fail fast at startup rather than silently use a guessable key.
+  internal:
+    service-token: ${INTERNAL_SERVICE_TOKEN}
+
+  mail:
+    from: ${MAIL_FROM:no-reply@aijobportal.com}
+
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 3000
+        readTimeout: 5000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{correlationId}]"
+
+# Binds the "authService" circuit breaker/retry instance (used when
+# resolving a recipient's e-mail address via Feign before dispatching a
+# notification e-mail) to the shared "default" Resilience4j config
+# declared in config-repo/application.yml.
+resilience4j:
+  circuitbreaker:
+    instances:
+      authService:
+        baseConfig: default
+  retry:
+    instances:
+      authService:
+        baseConfig: default

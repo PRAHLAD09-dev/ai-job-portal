@@ -57,6 +57,10 @@ spring:
           uri: lb://AI-SERVICE
           predicates:
             - Path=/api/v1/ai/**
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/v1/notifications/**
 
       globalcors:
         cors-configurations:
