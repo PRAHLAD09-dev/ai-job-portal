@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------
+   Design tokens — derived from 01_UI_DESIGN.md
+   Primary: Indigo | Secondary: Emerald | Accent: Sky Blue
+   Success: Green | Warning: Amber | Danger: Red
+   Background: Light Gray (light) / Dark Slate (dark)
+--------------------------------------------------------------------- */
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  --color-primary-50: oklch(0.97 0.02 265);
+  --color-primary-500: oklch(0.55 0.22 265); /* indigo-600ish */
+  --color-primary-600: oklch(0.5 0.22 265);
+  --color-primary-700: oklch(0.44 0.21 265);
+
+  --color-secondary-500: oklch(0.66 0.15 165); /* emerald */
+  --color-secondary-600: oklch(0.6 0.15 165);
+
+  --color-accent-500: oklch(0.7 0.14 235); /* sky */
+
+  --color-success-500: oklch(0.65 0.17 145);
+  --color-warning-500: oklch(0.78 0.16 80);
+  --color-danger-500: oklch(0.6 0.22 25);
+}
+
+:root {
+  --background: 0 0% 98%;
+  --foreground: 222 20% 12%;
+  --surface: 0 0% 100%;
+  --border-color: 220 14% 90%;
+  --muted: 220 14% 45%;
+}
+
+.dark {
+  --background: 222 25% 8%;
+  --foreground: 210 20% 96%;
+  --surface: 222 22% 11%;
+  --border-color: 217 19% 20%;
+  --muted: 217 12% 60%;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Visible keyboard focus ring everywhere (WCAG AA requirement) */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Skeleton loading shimmer (used instead of spinners wherever possible) */
+@keyframes skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.skeleton {
+  animation: skeleton-pulse 1.6s ease-in-out infinite;
+  background-color: hsl(var(--border-color));
+  border-radius: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
