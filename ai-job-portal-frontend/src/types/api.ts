@@ -17,3 +17,13 @@ export interface ApiResponse<T> {
   timestamp: string;
   errors: ApiError[] | null;
 }
+
+/** Mirrors com.prahlad.aijobportal.common.response.PageResponse<T> exactly. */
+export interface PageResponse<T> {
+  content: T[];
+  pageNumber: number;
+  pageSize: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}

@@ -25,7 +25,10 @@ const VerifyEmailPage = lazy(() => import("@/features/auth/pages/VerifyEmailPage
 const CandidateDashboardPage = lazy(() => import("@/pages/candidate/CandidateDashboardPage"));
 const CandidateProfilePage = lazy(() => import("@/pages/candidate/CandidateProfilePage"));
 const CandidateJobsPage = lazy(() => import("@/pages/candidate/CandidateJobsPage"));
+const JobDetailsPage = lazy(() => import("@/pages/candidate/JobDetailsPage"));
+const SavedJobsPage = lazy(() => import("@/pages/candidate/SavedJobsPage"));
 const CandidateApplicationsPage = lazy(() => import("@/pages/candidate/CandidateApplicationsPage"));
+const ApplicationDetailsPage = lazy(() => import("@/pages/candidate/ApplicationDetailsPage"));
 const CandidateAiPage = lazy(() => import("@/pages/candidate/CandidateAiPage"));
 const CandidateSettingsPage = lazy(() => import("@/pages/candidate/CandidateSettingsPage"));
 
@@ -77,7 +80,10 @@ export function AppRouter() {
               <Route path="/candidate/dashboard" element={<CandidateDashboardPage />} />
               <Route path="/candidate/profile" element={<CandidateProfilePage />} />
               <Route path="/candidate/jobs" element={<CandidateJobsPage />} />
+              <Route path="/candidate/jobs/saved" element={<SavedJobsPage />} />
+              <Route path="/candidate/jobs/:jobId" element={<JobDetailsPage />} />
               <Route path="/candidate/applications" element={<CandidateApplicationsPage />} />
+              <Route path="/candidate/applications/:applicationId" element={<ApplicationDetailsPage />} />
               <Route path="/candidate/ai" element={<CandidateAiPage />} />
               <Route path="/candidate/settings" element={<CandidateSettingsPage />} />
             </Route>

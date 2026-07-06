@@ -1,0 +1,275 @@
+import { useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+import { toast } from "sonner";
+import {
+  Bookmark,
+  BriefcaseBusiness,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  MapPin,
+  Share2,
+  Wallet,
+} from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/common/EmptyState";
+import { formatEnumLabel } from "@/utils/format";
+import { useJobDetails, useSimilarJobs } from "@/features/jobs/hooks/useJobs";
+import { useSaveJob, useSavedJobIds, useUnsaveJob } from "@/features/jobs/hooks/useSavedJobs";
+import { JobCard } from "@/features/jobs/components/JobCard";
+import { ApplyJobDialog } from "@/features/applications/components/ApplyJobDialog";
+import type { JobResponse } from "@/features/jobs/types";
+
+function formatSalaryRange(job: JobResponse): string | null {
+  if (job.minSalary == null && job.maxSalary == null) return null;
+  const currency = job.currency ?? "";
+  const period = job.salaryType ? `/${formatEnumLabel(job.salaryType).toLowerCase()}` : "";
+  if (job.minSalary != null && job.maxSalary != null) {
+    return `${currency} ${job.minSalary.toLocaleString()} - ${job.maxSalary.toLocaleString()}${period}`;
+  }
+  return `${currency} ${(job.minSalary ?? job.maxSalary)?.toLocaleString()}${period}`;
+}
+
+export default function JobDetailsPage() {
+  const { jobId } = useParams<{ jobId: string }>();
+  const { data: job, isLoading } = useJobDetails(jobId);
+  const { data: similarJobs } = useSimilarJobs(jobId);
+  const savedJobIds = useSavedJobIds();
+  const saveJob = useSaveJob();
+  const unsaveJob = useUnsaveJob();
+  const [isApplyOpen, setIsApplyOpen] = useState(false);
+
+  // Hooks must run unconditionally on every render (Rules of Hooks), so
+  // these are computed before the isLoading/!job early returns below,
+  // guarding internally for a not-yet-loaded job.
+  const qualifications = useMemo(
+    () =>
+      (job?.requirements ?? [])
+        .filter((r) => r.type === "QUALIFICATION")
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+    [job?.requirements],
+  );
+  const responsibilities = useMemo(
+    () =>
+      (job?.requirements ?? [])
+        .filter((r) => r.type === "RESPONSIBILITY")
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+    [job?.requirements],
+  );
+  const niceToHaves = useMemo(
+    () =>
+      (job?.requirements ?? [])
+        .filter((r) => r.type === "NICE_TO_HAVE")
+        .sort((a, b) => a.displayOrder - b.displayOrder),
+    [job?.requirements],
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    );
+  }
+
+  if (!job) {
+    return (
+      <EmptyState
+        icon={<BriefcaseBusiness className="h-8 w-8" />}
+        title="Job not found"
+        message="This job may have been removed or is no longer available."
+      />
+    );
+  }
+
+  const isSaved = savedJobIds.has(job.id);
+  const salary = formatSalaryRange(job);
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Job link copied to clipboard");
+    } catch {
+      toast.error("Could not copy link");
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[hsl(var(--border-color))] bg-[hsl(var(--background))]">
+              {job.companyLogoUrl ? (
+                <img src={job.companyLogoUrl} alt={job.companyName} className="h-full w-full object-cover" />
+              ) : (
+                <Building2 className="h-7 w-7 text-[hsl(var(--muted))]" />
+              )}
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold">{job.title}</h1>
+              <p className="text-sm text-[hsl(var(--muted))]">{job.companyName}</p>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {job.featured && <Badge variant="primary">Featured</Badge>}
+                <Badge variant="outline">{formatEnumLabel(job.jobType)}</Badge>
+                <Badge variant="outline">{formatEnumLabel(job.workMode)}</Badge>
+                <Badge variant="outline">{formatEnumLabel(job.experienceLevel)}</Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex shrink-0 gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => (isSaved ? unsaveJob.mutate(job.id) : saveJob.mutate(job.id))}
+              disabled={saveJob.isPending || unsaveJob.isPending}
+            >
+              <Bookmark className={`h-4 w-4 ${isSaved ? "fill-primary-600 text-primary-600" : ""}`} />
+              {isSaved ? "Saved" : "Save"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleShare}>
+              <Share2 className="h-4 w-4" /> Share
+            </Button>
+            <Button size="sm" onClick={() => setIsApplyOpen(true)} disabled={job.status !== "PUBLISHED"}>
+              Apply Now
+            </Button>
+          </div>
+        </div>
+
+        <div className="mt-6 grid grid-cols-2 gap-4 border-t border-[hsl(var(--border-color))] pt-4 text-sm sm:grid-cols-4">
+          <div>
+            <p className="flex items-center gap-1.5 text-[hsl(var(--muted))]">
+              <MapPin className="h-4 w-4" /> Location
+            </p>
+            <p className="mt-1 font-medium">
+              {job.locations.length > 0
+                ? job.locations.map((l) => `${l.city}, ${l.country}`).join(" · ")
+                : formatEnumLabel(job.workMode)}
+            </p>
+          </div>
+          {salary && (
+            <div>
+              <p className="flex items-center gap-1.5 text-[hsl(var(--muted))]">
+                <Wallet className="h-4 w-4" /> Salary
+              </p>
+              <p className="mt-1 font-medium">{salary}</p>
+            </div>
+          )}
+          <div>
+            <p className="flex items-center gap-1.5 text-[hsl(var(--muted))]">
+              <Clock className="h-4 w-4" /> Vacancies
+            </p>
+            <p className="mt-1 font-medium">{job.vacancies}</p>
+          </div>
+          {job.applicationDeadline && (
+            <div>
+              <p className="flex items-center gap-1.5 text-[hsl(var(--muted))]">
+                <Calendar className="h-4 w-4" /> Apply Before
+              </p>
+              <p className="mt-1 font-medium">{new Date(job.applicationDeadline).toLocaleDateString()}</p>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-6">
+          <Card>
+            <h2 className="text-base font-semibold">Job Description</h2>
+            <p className="mt-3 whitespace-pre-line text-sm leading-relaxed">{job.description}</p>
+          </Card>
+
+          {responsibilities.length > 0 && (
+            <Card>
+              <h2 className="text-base font-semibold">Responsibilities</h2>
+              <ul className="mt-3 space-y-2">
+                {responsibilities.map((r) => (
+                  <li key={r.id} className="flex gap-2 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" /> {r.description}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {qualifications.length > 0 && (
+            <Card>
+              <h2 className="text-base font-semibold">Qualifications</h2>
+              <ul className="mt-3 space-y-2">
+                {qualifications.map((r) => (
+                  <li key={r.id} className="flex gap-2 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-primary-600" /> {r.description}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {niceToHaves.length > 0 && (
+            <Card>
+              <h2 className="text-base font-semibold">Nice to Have</h2>
+              <ul className="mt-3 space-y-2">
+                {niceToHaves.map((r) => (
+                  <li key={r.id} className="flex gap-2 text-sm">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[hsl(var(--muted))]" /> {r.description}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {job.benefits.length > 0 && (
+            <Card>
+              <h2 className="text-base font-semibold">Benefits</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                {job.benefits.map((benefit) => (
+                  <div key={benefit.id} className="rounded-lg border border-[hsl(var(--border-color))] p-3">
+                    <p className="text-sm font-medium">{benefit.title}</p>
+                    {benefit.description && (
+                      <p className="mt-1 text-xs text-[hsl(var(--muted))]">{benefit.description}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        <div className="space-y-6">
+          {job.skills.length > 0 && (
+            <Card>
+              <h2 className="text-base font-semibold">Skills</h2>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {job.skills.map((skill) => (
+                  <Badge key={skill.id} variant={skill.mandatory ? "primary" : "outline"}>
+                    {skill.name}
+                  </Badge>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {similarJobs && similarJobs.length > 0 && (
+            <div>
+              <h2 className="mb-3 text-base font-semibold">Similar Jobs</h2>
+              <div className="space-y-3">
+                {similarJobs.map((similarJob) => (
+                  <JobCard key={similarJob.id} job={similarJob} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <ApplyJobDialog open={isApplyOpen} onOpenChange={setIsApplyOpen} jobId={job.id} jobTitle={job.title} />
+    </div>
+  );
+}

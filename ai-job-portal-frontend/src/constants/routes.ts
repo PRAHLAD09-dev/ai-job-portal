@@ -16,6 +16,7 @@ export const ROUTES = {
   CANDIDATE_DASHBOARD: "/candidate/dashboard",
   CANDIDATE_PROFILE: "/candidate/profile",
   CANDIDATE_JOBS: "/candidate/jobs",
+  CANDIDATE_SAVED_JOBS: "/candidate/jobs/saved",
   CANDIDATE_APPLICATIONS: "/candidate/applications",
   CANDIDATE_AI: "/candidate/ai",
   CANDIDATE_SETTINGS: "/candidate/settings",
@@ -39,3 +40,9 @@ export const ROUTES = {
   NOT_FOUND_404: "/404",
   SERVER_ERROR_500: "/500",
 } as const;
+
+/** Dynamic route builders — kept alongside ROUTES so components never hand-build paths. */
+export const buildRoute = {
+  candidateJobDetails: (jobId: string) => `/candidate/jobs/${jobId}`,
+  candidateApplicationDetails: (applicationId: string) => `/candidate/applications/${applicationId}`,
+};

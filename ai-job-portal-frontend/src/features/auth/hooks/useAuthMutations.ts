@@ -7,6 +7,7 @@ import { extractErrorMessage } from "@/services/api-client";
 import { ROUTES } from "@/constants/routes";
 import type { RoleName } from "@/types/auth";
 import type {
+  ChangePasswordRequest,
   ForgotPasswordRequest,
   LoginRequest,
   RegisterRequest,
@@ -93,6 +94,14 @@ export function useResetPassword() {
       toast.success(response.message || "Password reset successfully");
       navigate(ROUTES.LOGIN, { replace: true });
     },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (payload: ChangePasswordRequest) => authService.changePassword(payload),
+    onSuccess: (response) => toast.success(response.message || "Password changed successfully"),
     onError: (error) => toast.error(extractErrorMessage(error)),
   });
 }

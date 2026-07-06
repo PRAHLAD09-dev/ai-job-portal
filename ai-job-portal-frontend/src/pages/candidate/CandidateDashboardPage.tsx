@@ -1,27 +1,140 @@
+import { Link } from "react-router-dom";
+import { FileText, Pencil, Search, Send } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { buttonVariants } from "@/components/ui/button";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
+import { ProfileCompletionCard } from "@/features/profile/components/ProfileCompletionCard";
+import { useResumesList } from "@/features/profile/hooks/useResumes";
+import { useSavedJobsList } from "@/features/jobs/hooks/useSavedJobs";
+import { useFeaturedJobs } from "@/features/jobs/hooks/useJobs";
+import { useMyApplications } from "@/features/applications/hooks/useApplications";
+import { JobCard } from "@/features/jobs/components/JobCard";
+import { ApplicationCard } from "@/features/applications/components/ApplicationCard";
 
 export default function CandidateDashboardPage() {
   const { user } = useAuth();
+  const { data: resumes, isLoading: isLoadingResumes } = useResumesList();
+  const { data: savedJobs } = useSavedJobsList({ page: 0, size: 100 });
+  const { data: recentApplications, isLoading: isLoadingApplications } = useMyApplications({ page: 0, size: 3 });
+  const { data: featuredJobs, isLoading: isLoadingFeatured } = useFeaturedJobs();
+
+  const activeResumeCount = resumes?.filter((r) => r.status === "ACTIVE").length ?? 0;
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold">Welcome back, {user?.firstName}</h1>
-        <p className="text-sm text-[hsl(var(--muted))]">Here's what's happening with your job search.</p>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {["Applications", "Saved Jobs", "Profile Score", "AI Credits"].map((label) => (
-          <Card key={label}>
-            <p className="text-sm text-[hsl(var(--muted))]">{label}</p>
-            <p className="mt-2 text-2xl font-semibold">0</p>
-          </Card>
-        ))}
-      </div>
-      <Card>
-        <p className="text-sm text-[hsl(var(--muted))]">
-          Candidate profile, resume manager, applications, and AI features will be built out in
-          Phase 3 &amp; 4 per 05_FRONTEND_ROADMAP.md.
+        <h1 className="text-2xl font-semibold tracking-tight">Welcome back, {user?.firstName}!</h1>
+        <p className="mt-1 text-sm text-[hsl(var(--muted))]">
+          Here&apos;s what&apos;s happening with your job search today.
         </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <ProfileCompletionCard />
+
+        <Card>
+          <p className="text-sm font-medium text-[hsl(var(--muted))]">Resumes</p>
+          {isLoadingResumes ? (
+            <Skeleton className="mt-2 h-8 w-16" />
+          ) : (
+            <p className="mt-2 text-2xl font-semibold">{activeResumeCount}</p>
+          )}
+          <Link to={ROUTES.CANDIDATE_PROFILE} className="mt-2 inline-block text-xs text-primary-600 hover:underline">
+            Manage resumes →
+          </Link>
+        </Card>
+
+        <Card>
+          <p className="text-sm font-medium text-[hsl(var(--muted))]">Saved Jobs</p>
+          <p className="mt-2 text-2xl font-semibold">{savedJobs?.totalElements ?? 0}</p>
+          <Link to={ROUTES.CANDIDATE_SAVED_JOBS} className="mt-2 inline-block text-xs text-primary-600 hover:underline">
+            View saved jobs →
+          </Link>
+        </Card>
+
+        <Card>
+          <p className="text-sm font-medium text-[hsl(var(--muted))]">Applications</p>
+          <p className="mt-2 text-2xl font-semibold">{recentApplications?.totalElements ?? 0}</p>
+          <Link to={ROUTES.CANDIDATE_APPLICATIONS} className="mt-2 inline-block text-xs text-primary-600 hover:underline">
+            View applications →
+          </Link>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">Recent Applications</h2>
+            <Link to={ROUTES.CANDIDATE_APPLICATIONS} className="text-xs text-primary-600 hover:underline">
+              View all
+            </Link>
+          </div>
+          {isLoadingApplications && (
+            <div className="space-y-3">
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </div>
+          )}
+          {!isLoadingApplications && recentApplications?.content.length === 0 && (
+            <EmptyState
+              icon={<Send className="h-8 w-8" />}
+              title="No applications yet"
+              message="Browse jobs and start applying to track them here."
+              actionLabel="Find Jobs"
+              onAction={() => (window.location.href = ROUTES.CANDIDATE_JOBS)}
+            />
+          )}
+          <div className="space-y-3">
+            {recentApplications?.content.map((application) => (
+              <ApplicationCard key={application.id} application={application} />
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">Featured Jobs</h2>
+            <Link to={ROUTES.CANDIDATE_JOBS} className="text-xs text-primary-600 hover:underline">
+              Browse all
+            </Link>
+          </div>
+          {isLoadingFeatured && (
+            <div className="space-y-3">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+          )}
+          {!isLoadingFeatured && featuredJobs?.length === 0 && (
+            <EmptyState
+              icon={<Search className="h-8 w-8" />}
+              title="No featured jobs right now"
+              message="Check back soon, or browse all open positions."
+            />
+          )}
+          <div className="space-y-3">
+            {featuredJobs?.slice(0, 3).map((job) => (
+              <JobCard key={job.id} job={job} />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <Card className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+        <div className="flex items-center gap-3">
+          <FileText className="h-8 w-8 text-primary-600" />
+          <div>
+            <p className="font-medium">Keep your profile fresh</p>
+            <p className="text-sm text-[hsl(var(--muted))]">
+              A complete profile with an up-to-date resume gets noticed faster by recruiters.
+            </p>
+          </div>
+        </div>
+        <Link to={ROUTES.CANDIDATE_PROFILE} className={buttonVariants({ variant: "outline" })}>
+          <Pencil className="h-4 w-4" /> Update Profile
+        </Link>
       </Card>
     </div>
   );
