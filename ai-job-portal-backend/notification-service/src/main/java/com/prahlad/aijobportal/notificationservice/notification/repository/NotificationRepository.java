@@ -14,4 +14,12 @@ public interface NotificationRepository extends JpaRepository<Notification, UUID
     Page<Notification> findByUserIdAndReadFalse(UUID userId, Pageable pageable);
 
     long countByUserIdAndReadFalse(UUID userId);
+
+    // ---- Added for Admin Service (DAY09_ADMIN_SERVICE.md) platform
+    // notification statistics. ----
+    long countByStatus(com.prahlad.aijobportal.notificationservice.notification.enums.NotificationStatus status);
+
+    long countByReadTrue();
+
+    long countByReadFalse();
 }

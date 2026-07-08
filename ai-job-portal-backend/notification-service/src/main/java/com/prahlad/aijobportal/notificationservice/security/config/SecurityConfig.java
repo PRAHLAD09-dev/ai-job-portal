@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.notificationservice.security.config;
 
+import com.prahlad.aijobportal.notificationservice.security.filter.InternalServiceAuthFilter;
 import com.prahlad.aijobportal.notificationservice.security.filter.JwtAuthenticationFilter;
 import com.prahlad.aijobportal.notificationservice.security.filter.RestAuthenticationEntryPoint;
 import com.prahlad.aijobportal.common.constant.CommonConstants;
@@ -18,6 +19,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * authentication — a user may only ever read/manage their own
  * notifications, resolved from the authenticated principal, per
  * PROJECT_SPECIFICATION.md Section 18 (Module Boundaries).
+ *
+ * {@code /notifications/internal/admin/**} is a separate, additive
+ * concern (added for Admin Service, DAY09_ADMIN_SERVICE.md): it is
+ * authenticated by {@link InternalServiceAuthFilter} via a shared
+ * service-to-service secret (never a user bearer token) and restricted
+ * to {@code ROLE_INTERNAL_SERVICE}, mirroring the identical pattern
+ * already established in Auth Service. It must never be exposed through
+ * the API Gateway's public routes.
  */
 @Configuration
 @EnableWebSecurity
@@ -25,6 +34,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final InternalServiceAuthFilter internalServiceAuthFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
 
     private static final String[] PUBLIC_ENDPOINTS = {
@@ -33,6 +43,8 @@ public class SecurityConfig {
             "/swagger-ui/**",
             "/v3/api-docs/**"
     };
+
+    private static final String INTERNAL_ENDPOINTS = CommonConstants.API_BASE_PATH + "/notifications/internal/**";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -43,9 +55,11 @@ public class SecurityConfig {
                 .exceptionHandling(handling -> handling.authenticationEntryPoint(authenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(PUBLIC_ENDPOINTS).permitAll()
+                        .requestMatchers(INTERNAL_ENDPOINTS).hasRole(InternalServiceAuthFilter.ROLE_INTERNAL_SERVICE)
                         .requestMatchers(CommonConstants.API_BASE_PATH + "/**").authenticated()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(internalServiceAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

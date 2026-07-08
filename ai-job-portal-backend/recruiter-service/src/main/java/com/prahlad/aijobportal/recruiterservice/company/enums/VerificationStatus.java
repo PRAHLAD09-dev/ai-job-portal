@@ -7,5 +7,12 @@ package com.prahlad.aijobportal.recruiterservice.company.enums;
 public enum VerificationStatus {
     PENDING,
     VERIFIED,
-    REJECTED
+    REJECTED,
+    /**
+     * Added for Admin Service (DAY09_ADMIN_SERVICE.md): a previously
+     * verified (or pending) company suspended by an administrator.
+     * Purely additive — stored in the existing VARCHAR(20) column with
+     * no CHECK constraint, so no migration is required.
+     */
+    SUSPENDED
 }

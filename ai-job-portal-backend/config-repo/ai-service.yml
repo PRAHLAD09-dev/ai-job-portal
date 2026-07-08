@@ -31,6 +31,15 @@ app:
     secret: ${JWT_SECRET}
     issuer: ai-job-portal-auth-service
 
+  # ---- Internal service-to-service authentication ----
+  # Added for Admin Service (DAY09_ADMIN_SERVICE.md): validates the shared
+  # secret header sent by InternalServiceAuthFilter callers (Admin Service
+  # reading AI usage statistics). Mirrors the identical property already
+  # used by Auth Service. No default value on purpose: fail fast at
+  # startup rather than silently accept a guessable key.
+  internal:
+    service-token: ${INTERNAL_SERVICE_TOKEN}
+
   # ---- Gemini API ---- (DECISIONS.md: "Provider-Independent Design")
   # No default api-key on purpose: fail fast at startup rather than
   # silently call Gemini with an empty key.

@@ -305,6 +305,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
@@ -355,6 +356,7 @@ services:
       REDIS_HOST: redis
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
     depends_on:
       config-server:
         condition: service_healthy
@@ -399,6 +401,7 @@ services:
       REDIS_HOST: redis
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
     depends_on:
       config-server:
         condition: service_healthy
@@ -447,6 +450,7 @@ services:
       REDIS_HOST: redis
       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
     depends_on:
       config-server:
@@ -527,6 +531,61 @@ services:
       - ai-job-portal-network
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8087/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ----------------------------------------------------------------------
+  # Admin Service — Dashboard, User/Company/Job Management, Application/AI/
+  # Notification Monitoring, Audit Logs. Owns only its own audit_logs
+  # table; every statistic/moderation action is a live OpenFeign call to
+  # the service that actually owns that data.
+  # ----------------------------------------------------------------------
+  admin-service:
+    build:
+      context: .
+      dockerfile: admin-service/Dockerfile
+    container_name: ai-job-portal-admin-service
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_SERVICE_PORT:-8088}:8088"
+    environment:
+      CONFIG_SERVER_URI: http://config-server:8888
+      EUREKA_URI: http://discovery-server:8761/eureka/
+      ADMIN_DB_HOST: postgres
+      ADMIN_DB_PORT: 5432
+      ADMIN_DB_NAME: admin_service_db
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      JWT_SECRET: ${JWT_SECRET}
+      INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      recruiter-service:
+        condition: service_healthy
+      job-service:
+        condition: service_healthy
+      application-service:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+      notification-service:
+        condition: service_healthy
+    networks:
+      - ai-job-portal-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
       interval: 15s
       timeout: 5s
       retries: 5

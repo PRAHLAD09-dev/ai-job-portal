@@ -21,6 +21,24 @@ spring:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials
       routes:
+        # ---- SAFETY NET: never let internal-only, service-to-service
+        # endpoints (Auth/Recruiter/Job/Application/AI/Notification's
+        # "/internal/**" paths, added for Admin Service per
+        # DAY09_ADMIN_SERVICE.md) reach the public internet through this
+        # gateway. Every one of them already independently requires the
+        # shared X-Internal-Service-Token header (InternalServiceAuthFilter),
+        # but blocking the path here too — BEFORE the broader per-service
+        # routes below get a chance to match — is a second, independent
+        # layer of protection against a leaked/guessed token being usable
+        # from outside the Docker network. This route is listed first
+        # deliberately: Spring Cloud Gateway evaluates routes in list order
+        # and stops at the first predicate match.
+        - id: block-internal-service-endpoints
+          uri: no://op
+          predicates:
+            - Path=/api/v1/*/internal/**
+          filters:
+            - SetStatus=404
         - id: auth-service
           uri: lb://AUTH-SERVICE
           predicates:
@@ -61,6 +79,15 @@ spring:
           uri: lb://NOTIFICATION-SERVICE
           predicates:
             - Path=/api/v1/notifications/**
+        # ---- Admin Service (DAY09_ADMIN_SERVICE.md) ----
+        # Every /api/v1/admin/** endpoint additionally requires an
+        # ADMIN/SUPER_ADMIN-scoped bearer token, enforced by Admin
+        # Service's own SecurityConfig — the gateway route below only
+        # handles discovery/load-balancing, never authorization.
+        - id: admin-service
+          uri: lb://ADMIN-SERVICE
+          predicates:
+            - Path=/api/v1/admin/**
 
       globalcors:
         cors-configurations:

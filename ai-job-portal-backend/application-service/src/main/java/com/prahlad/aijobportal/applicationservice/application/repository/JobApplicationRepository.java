@@ -34,4 +34,8 @@ public interface JobApplicationRepository extends JpaRepository<JobApplication, 
     long countByCandidateUserIdAndStatus(UUID candidateUserId, ApplicationStatus status);
 
     long countByJobId(UUID jobId);
+
+    // ---- Added for Admin Service (DAY09_ADMIN_SERVICE.md) platform
+    // application statistics. ----
+    long countByStatus(ApplicationStatus status);
 }

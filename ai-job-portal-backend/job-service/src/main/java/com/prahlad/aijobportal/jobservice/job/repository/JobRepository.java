@@ -37,6 +37,12 @@ public interface JobRepository extends JpaRepository<Job, UUID>, JpaSpecificatio
 
     long countByCompanyIdAndStatus(UUID companyId, JobStatus status);
 
+    // ---- Added for Admin Service (DAY09_ADMIN_SERVICE.md) platform
+    // job statistics. ----
+    long countByStatus(JobStatus status);
+
+    long countByFeaturedTrue();
+
     @Modifying
     @Query("update Job j set j.viewCount = j.viewCount + 1 where j.id = :jobId")
     int incrementViewCount(@Param("jobId") UUID jobId);

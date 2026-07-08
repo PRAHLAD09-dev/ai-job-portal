@@ -25,6 +25,7 @@ DATABASES=(
   "application_service_db"
   "ai_service_db"
   "notification_service_db"
+  "admin_service_db"
 )
 
 for DB in "${DATABASES[@]}"; do

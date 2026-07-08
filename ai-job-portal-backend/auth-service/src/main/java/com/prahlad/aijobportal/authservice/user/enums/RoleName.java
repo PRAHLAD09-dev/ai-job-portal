@@ -8,5 +8,11 @@ package com.prahlad.aijobportal.authservice.user.enums;
 public enum RoleName {
     CANDIDATE,
     RECRUITER,
-    ADMIN
+    ADMIN,
+    /**
+     * Added for Admin Service (DAY09_ADMIN_SERVICE.md): a super-privileged
+     * administrator tier above {@code ADMIN}. Purely additive — existing
+     * ADMIN accounts and authorization checks are unaffected.
+     */
+    SUPER_ADMIN
 }
