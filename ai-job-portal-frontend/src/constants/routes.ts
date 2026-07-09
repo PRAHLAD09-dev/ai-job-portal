@@ -25,8 +25,10 @@ export const ROUTES = {
   RECRUITER_DASHBOARD: "/recruiter/dashboard",
   RECRUITER_COMPANY: "/recruiter/company",
   RECRUITER_JOBS: "/recruiter/jobs",
+  RECRUITER_CREATE_JOB: "/recruiter/jobs/new",
   RECRUITER_CANDIDATES: "/recruiter/candidates",
   RECRUITER_AI: "/recruiter/ai",
+  RECRUITER_SETTINGS: "/recruiter/settings",
 
   // Admin
   ADMIN_DASHBOARD: "/admin/dashboard",
@@ -45,4 +47,7 @@ export const ROUTES = {
 export const buildRoute = {
   candidateJobDetails: (jobId: string) => `/candidate/jobs/${jobId}`,
   candidateApplicationDetails: (applicationId: string) => `/candidate/applications/${applicationId}`,
+  recruiterEditJob: (jobId: string) => `/recruiter/jobs/${jobId}/edit`,
+  recruiterJobPreview: (jobId: string) => `/recruiter/jobs/${jobId}/preview`,
+  recruiterApplicationDetails: (applicationId: string) => `/recruiter/candidates/${applicationId}`,
 };

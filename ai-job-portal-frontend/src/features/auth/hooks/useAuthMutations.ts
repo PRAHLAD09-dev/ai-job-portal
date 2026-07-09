@@ -17,7 +17,7 @@ import type {
 } from "@/features/auth/types";
 
 function dashboardPathForRole(roles: RoleName[]): string {
-  if (roles.includes("ADMIN")) return ROUTES.ADMIN_DASHBOARD;
+  if (roles.includes("ADMIN") || roles.includes("SUPER_ADMIN")) return ROUTES.ADMIN_DASHBOARD;
   if (roles.includes("RECRUITER")) return ROUTES.RECRUITER_DASHBOARD;
   return ROUTES.CANDIDATE_DASHBOARD;
 }

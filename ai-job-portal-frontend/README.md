@@ -65,3 +65,22 @@ npm run lint
 
 Candidate/Recruiter/Admin dashboards beyond the shell, Job/Application/AI/Notification
 service integration — these are placeholder pages, wired up in Phases 3–4.
+
+## Day 04 — AI Features & Smart Experience
+
+Adds the full candidate-facing AI module (`/candidate/ai`): AI Dashboard,
+Resume Analysis, ATS Score, Job Recommendations, Cover Letter Generator,
+and Skill Gap Analysis — all calling real `ai-service` endpoints through
+the API Gateway (no dummy data). Recruiter AI tools (Job Description,
+Interview Questions, Candidate Recommendations) and the Notification
+drawer/preferences were already wired up in earlier phases and are
+unchanged.
+
+See `KNOWN_BACKEND_LIMITATIONS.md` items 5–8 for every place the AI
+module's UI is a real (not fabricated) subset of the Day 04 spec because
+of a genuine backend gap — resume text extraction, AI history, skill-gap
+roadmap/courses, and recommendation pagination.
+
+Verified in this pass: `npm install`, `npx tsc -b` (0 errors), `npm run
+build` (production build succeeds), `npm run lint` (0 errors, 3
+pre-existing warnings unrelated to this change).

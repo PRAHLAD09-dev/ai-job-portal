@@ -6,7 +6,7 @@ export interface RegisterRequest {
   lastName: string;
   email: string;
   password: string;
-  role: Exclude<RoleName, "ADMIN">; // registration only for CANDIDATE / RECRUITER
+  role: Exclude<RoleName, "ADMIN" | "SUPER_ADMIN">; // registration only for CANDIDATE / RECRUITER
 }
 
 // Mirrors auth-service LoginRequest

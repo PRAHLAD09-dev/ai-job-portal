@@ -35,6 +35,7 @@ export const RECRUITER_NAV: NavItem[] = [
   { label: "Jobs", path: ROUTES.RECRUITER_JOBS, icon: Briefcase },
   { label: "Candidates", path: ROUTES.RECRUITER_CANDIDATES, icon: Users },
   { label: "AI", path: ROUTES.RECRUITER_AI, icon: Sparkles },
+  { label: "Settings", path: ROUTES.RECRUITER_SETTINGS, icon: Settings },
 ];
 
 export const ADMIN_NAV: NavItem[] = [

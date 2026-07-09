@@ -37,6 +37,10 @@ const RecruiterCompanyPage = lazy(() => import("@/pages/recruiter/RecruiterCompa
 const RecruiterJobsPage = lazy(() => import("@/pages/recruiter/RecruiterJobsPage"));
 const RecruiterCandidatesPage = lazy(() => import("@/pages/recruiter/RecruiterCandidatesPage"));
 const RecruiterAiPage = lazy(() => import("@/pages/recruiter/RecruiterAiPage"));
+const RecruiterSettingsPage = lazy(() => import("@/pages/recruiter/RecruiterSettingsPage"));
+const CreateJobPage = lazy(() => import("@/features/recruiter-jobs/pages/CreateJobPage"));
+const EditJobPage = lazy(() => import("@/features/recruiter-jobs/pages/EditJobPage"));
+const JobPreviewPage = lazy(() => import("@/features/recruiter-jobs/pages/JobPreviewPage"));
 
 const AdminDashboardPage = lazy(() => import("@/pages/admin/AdminDashboardPage"));
 const AdminUsersPage = lazy(() => import("@/pages/admin/AdminUsersPage"));
@@ -95,13 +99,18 @@ export function AppRouter() {
               <Route path="/recruiter/dashboard" element={<RecruiterDashboardPage />} />
               <Route path="/recruiter/company" element={<RecruiterCompanyPage />} />
               <Route path="/recruiter/jobs" element={<RecruiterJobsPage />} />
+              <Route path="/recruiter/jobs/new" element={<CreateJobPage />} />
+              <Route path="/recruiter/jobs/:jobId/edit" element={<EditJobPage />} />
+              <Route path="/recruiter/jobs/:jobId/preview" element={<JobPreviewPage />} />
               <Route path="/recruiter/candidates" element={<RecruiterCandidatesPage />} />
+              <Route path="/recruiter/candidates/:applicationId" element={<RecruiterCandidatesPage />} />
               <Route path="/recruiter/ai" element={<RecruiterAiPage />} />
+              <Route path="/recruiter/settings" element={<RecruiterSettingsPage />} />
             </Route>
           </Route>
 
           {/* ---- Admin routes ---- */}
-          <Route element={<RoleRoute allowed={["ADMIN"]} />}>
+          <Route element={<RoleRoute allowed={["ADMIN", "SUPER_ADMIN"]} />}>
             <Route element={<AdminLayout />}>
               <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
               <Route path="/admin/users" element={<AdminUsersPage />} />

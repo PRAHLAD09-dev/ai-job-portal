@@ -3,7 +3,7 @@
  * AccountStatus exactly (auth-service). Do not rename — used verbatim
  * in JWT roles claim and UserResponse.status.
  */
-export type RoleName = "CANDIDATE" | "RECRUITER" | "ADMIN";
+export type RoleName = "CANDIDATE" | "RECRUITER" | "ADMIN" | "SUPER_ADMIN";
 
 export type AccountStatus = "PENDING_VERIFICATION" | "ACTIVE" | "DISABLED";
 

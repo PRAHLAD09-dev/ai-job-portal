@@ -1,19 +1,110 @@
+import { useEffect } from "react";
+import { Briefcase, Building2, FileText, Sparkles, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminDashboard, useRecordAdminLogin } from "@/features/admin/hooks/useAdminDashboard";
+import { RecentActivityPanel } from "@/features/admin/components/RecentActivityPanel";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
+  const { data, isLoading } = useAdminDashboard();
+  const recordLogin = useRecordAdminLogin();
+
+  // Record once per admin panel session that this admin logged in (login audit trail).
+  useEffect(() => {
+    recordLogin.mutate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const widgets = data
+    ? [
+        { label: "Total users", icon: Users, value: data.userStatistics.totalUsers },
+        { label: "Candidates", icon: Users, value: data.userStatistics.totalCandidates },
+        { label: "Recruiters", icon: Users, value: data.userStatistics.totalRecruiters },
+        { label: "Companies", icon: Building2, value: data.companyStatistics.totalCompanies },
+        { label: "Active jobs", icon: Briefcase, value: data.jobStatistics.publishedJobs },
+        { label: "Applications", icon: FileText, value: data.applicationStatistics.totalApplications },
+      ]
+    : [];
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">Welcome, {user?.firstName}</h1>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {["Users", "Companies", "Jobs", "Reports"].map((label) => (
-          <Card key={label}>
-            <p className="text-sm text-[hsl(var(--muted))]">{label}</p>
-            <p className="mt-2 text-2xl font-semibold">0</p>
-          </Card>
-        ))}
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Welcome, {user?.firstName}</h1>
+        <p className="mt-1 text-sm text-[hsl(var(--muted))]">Platform overview.</p>
       </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {isLoading
+          ? Array.from({ length: 6 }).map((_, i) => (
+              <Card key={i}>
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="mt-3 h-7 w-16" />
+              </Card>
+            ))
+          : widgets.map(({ label, icon: Icon, value }) => (
+              <Card key={label}>
+                <div className="flex items-center gap-2">
+                  <Icon className="h-4 w-4 text-primary-600" />
+                  <p className="text-sm text-[hsl(var(--muted))]">{label}</p>
+                </div>
+                <p className="mt-2 text-2xl font-semibold">{value}</p>
+              </Card>
+            ))}
+      </div>
+
+      {data && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Card>
+            <div className="flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-primary-600" />
+              <h2 className="text-base font-semibold">Company verification</h2>
+            </div>
+            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
+              <div>
+                <dt className="text-[hsl(var(--muted))]">Pending</dt>
+                <dd className="font-medium">{data.companyStatistics.pendingCompanies}</dd>
+              </div>
+              <div>
+                <dt className="text-[hsl(var(--muted))]">Verified</dt>
+                <dd className="font-medium">{data.companyStatistics.verifiedCompanies}</dd>
+              </div>
+              <div>
+                <dt className="text-[hsl(var(--muted))]">Rejected</dt>
+                <dd className="font-medium">{data.companyStatistics.rejectedCompanies}</dd>
+              </div>
+              <div>
+                <dt className="text-[hsl(var(--muted))]">Suspended</dt>
+                <dd className="font-medium">{data.companyStatistics.suspendedCompanies}</dd>
+              </div>
+            </dl>
+          </Card>
+
+          <Card>
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary-600" />
+              <h2 className="text-base font-semibold">AI usage</h2>
+            </div>
+            <dl className="mt-3 grid grid-cols-1 gap-3 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-[hsl(var(--muted))]">Resume analyses</dt>
+                <dd className="font-medium">{data.aiStatistics.totalResumeAnalyses}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-[hsl(var(--muted))]">Job recommendations</dt>
+                <dd className="font-medium">{data.aiStatistics.totalJobRecommendations}</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-[hsl(var(--muted))]">Interview question sets</dt>
+                <dd className="font-medium">{data.aiStatistics.totalInterviewQuestionSets}</dd>
+              </div>
+            </dl>
+          </Card>
+        </div>
+      )}
+
+      {data && <RecentActivityPanel activity={data.recentActivity} />}
     </div>
   );
 }
