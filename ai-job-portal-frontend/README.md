@@ -1,86 +1,180 @@
-# AI Job Portal — Frontend (Day 01: Foundation & Authentication)
+# AI Job Portal — Frontend
 
-Built strictly against:
-- `01_UI_DESIGN.md`, `02_FRONTEND_ARCHITECTURE.md`, `03_MODULES.md`,
-  `04_BACKEND_INTEGRATION.md`, `05_FRONTEND_ROADMAP.md`, `DAY01_FRONTEND_FOUNDATION.md`
-- The **actual backend source code** (`auth-service`), not assumptions.
+An AI-powered job search and hiring platform frontend: candidates get resume
+analysis, ATS scoring, job matching, and cover-letter generation; recruiters
+get candidate recommendations, AI job descriptions, and interview question
+generation — all backed by a real Spring Boot microservice stack, not mocked
+data.
 
-## Backend contract source (verified by reading the code directly)
+Built strictly against a frozen spec (`01_UI_DESIGN.md` →
+`05_FRONTEND_ROADMAP.md`) and the **actual backend source code**, service by
+service, endpoint by endpoint. See `HISTORY.md` for the day-by-day build log
+and `KNOWN_BACKEND_LIMITATIONS.md` for every place the UI is an honest
+subset of the spec because of a genuine backend gap, rather than fabricated
+data.
 
-| Frontend file | Backend source it mirrors |
+---
+
+## Tech Stack
+
+| Layer | Choice |
 |---|---|
-| `src/features/auth/types/index.ts` | `auth-service/.../auth/dto/request/*.java` |
-| `src/types/auth.ts` | `AuthResponse.java`, `UserResponse.java`, `RoleName.java`, `AccountStatus.java` |
-| `src/types/api.ts` | `common/.../response/ApiResponse.java`, `ApiError.java` |
-| `src/features/auth/services/auth.service.ts` | `AuthController.java` (every endpoint, same path, same method) |
-| `src/features/auth/schemas/auth.schema.ts` | Jakarta `@Pattern`/`@Size`/`@Email` constraints on each request DTO |
-| `src/services/api-client.ts` | `JwtAuthenticationFilter.java` (`Authorization: Bearer <token>`), `RefreshTokenRequest.java` |
+| Framework | React 19 + Vite 6 + TypeScript |
+| Routing | React Router v7 (role-guarded, lazy-loaded) |
+| Styling | Tailwind CSS v4 + shadcn-style primitives |
+| Animation | Framer Motion |
+| Server state | TanStack Query v5 |
+| Forms | React Hook Form + Zod |
+| HTTP | Axios (single client, interceptor-based auth) |
+| Charts | Recharts |
+| Icons | Lucide React |
+| Toasts | Sonner |
+| PWA | vite-plugin-pwa (Workbox) |
 
-Base URL: `VITE_API_BASE_URL` → API Gateway (`http://localhost:8080/api/v1`), matching
-`config-repo/api-gateway.yml` route `Path=/api/v1/auth/**` → `lb://AUTH-SERVICE`.
-CORS in the gateway allows `http://localhost:5173` with credentials — matches Vite's default dev port used here.
+## Architecture
 
-No endpoint URL, field name, or DTO shape was invented or renamed.
+Feature-based: every business capability (`auth`, `jobs`, `applications`,
+`ai`, `notifications`, `profile`, `recruiter-*`, `admin`) owns its own
+`components/ hooks/ pages/ schemas/ services/ types/`. Components never call
+Axios directly — always `component → hook (TanStack Query) → service →
+apiClient → API Gateway → backend service`. See `02_FRONTEND_ARCHITECTURE.md`
+for the full rules this was built against.
 
-## Setup (run these on your machine — this sandbox has no network access)
+```
+src/
+├── app/            # AppProviders, query-client
+├── components/     # Shared UI: ui/ primitives, layout/, common/
+├── constants/       # routes, nav-config, env
+├── contexts/        # Auth, Theme
+├── features/         # auth, jobs, applications, ai, notifications,
+│                      # profile, recruiter-company, recruiter-jobs,
+│                      # recruiter-applications, recruiter-profile, admin
+├── layouts/          # Guest, Auth, Candidate, Recruiter, Admin, Error
+├── pages/            # Route-level pages per role
+├── routes/           # AppRouter, ProtectedRoute, PublicRoute, RoleRoute
+├── services/         # apiClient (Axios instance + interceptors)
+├── styles/           # Tailwind entry, design tokens
+└── types/            # Shared cross-feature types
+```
+
+## Features
+
+**Guest** — landing page, public job search/filter/pagination, login,
+register (role toggle), forgot/reset password, email verification.
+
+**Candidate** — dashboard, profile (education/experience/skills/
+certifications/portfolio), resume manager, job search + saved jobs, apply +
+application timeline, AI tools (resume analysis, ATS score, job
+recommendations, cover letter generator, skill gap analysis), notifications,
+settings.
+
+**Recruiter** — dashboard, company profile + branding, job CRUD, applicant
+review + hiring pipeline, AI tools (candidate recommendations, job
+description generator, interview question generator), notifications,
+settings.
+
+**Admin** — dashboard, users, companies, jobs overview.
+
+**Cross-cutting** — light/dark/system theme, global search, debounced
+search everywhere it's needed, reusable pagination, skeleton loading (no
+full-page spinners), custom empty states with CTAs, 401/403/404/500 error
+pages, notification drawer with unread badge.
+
+## Installation
 
 ```bash
+git clone <this-repo>
 cd frontend
 cp .env.example .env.local   # adjust VITE_API_BASE_URL if your gateway runs elsewhere
 npm install
 npm run dev                  # http://localhost:5173
-npm run build                # production build
-npm run lint
 ```
 
-## What's implemented (Day 01 scope)
+Requires the backend stack (API Gateway + microservices) running — see the
+backend repo's own README/`docker-compose.yml`. This frontend never talks to
+a microservice directly; every request goes through the API Gateway.
 
-- Vite + React 19 + TypeScript, path alias `@/*`, ESLint + Prettier
-- Feature-based folder structure exactly per `02_FRONTEND_ARCHITECTURE.md`
-- Tailwind CSS v4 with design tokens from `01_UI_DESIGN.md` (Indigo/Emerald/Sky/Success/Warning/Danger)
-- Light/Dark/System theme, persisted in localStorage
-- Animated splash screen (fade/scale/fade, ~2.2s)
-- Global providers: TanStack Query, Theme, Auth, Router, Sonner toasts
-- Layouts: Guest, Auth, Candidate, Recruiter, Admin, Error — with Sidebar (collapsible),
-  top Navbar, mobile bottom nav, theme switch, notification bell, user menu
-- Auth pages: Login, Register (role toggle), Forgot Password, Reset Password, Verify Email —
-  all React Hook Form + Zod, validation mirrored from the backend DTOs exactly
-- Axios client with request interceptor (attaches JWT) and response interceptor
-  (auto refresh-token-on-401 with request queueing, then forced logout if refresh fails)
-- Protected/Public/Role route guards; 401/403/404/500 custom error pages
-- Skeleton component + PageLoader (Suspense fallback) instead of blocking spinners
-- Route-level code splitting via `React.lazy`
+## Environment Variables
 
-## Verification performed in this sandbox (no network available for `npm install`)
+| Variable | Default | Purpose |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8080/api/v1` | API Gateway base URL. Baked into the build — changing it requires a rebuild, not just a restart. |
+| `VITE_APP_NAME` | `AI Job Portal` | Display name used in a few UI strings. |
+| `VITE_APP_SHORT_NAME` | `AJP` | Short name (PWA manifest, mobile labels). |
 
-- ✅ Every `@/...` and relative import resolves to a real file (scripted check, 77 files, 0 errors)
-- ✅ Braces/parens/brackets balanced across every `.ts`/`.tsx` file
-- ✅ Every package imported in source is declared in `package.json`
-- ✅ Manually cross-checked every DTO/endpoint/validation rule against the backend source
-- ⚠️ Could **not** run `npm install`, `tsc -b`, `npm run build`, or `npm run dev` here — this
-  environment's network is disabled. Please run the Setup commands above on your machine;
-  if you hit any TypeScript/build error, share the output and it'll be fixed immediately.
+See `.env.example`.
 
-## Not in scope for Day 01 (per `05_FRONTEND_ROADMAP.md`)
+## Available Scripts
 
-Candidate/Recruiter/Admin dashboards beyond the shell, Job/Application/AI/Notification
-service integration — these are placeholder pages, wired up in Phases 3–4.
+```bash
+npm run dev        # dev server, http://localhost:5173
+npm run build       # tsc -b && vite build → dist/
+npm run preview     # serve the production build locally
+npm run lint         # eslint .
+```
 
-## Day 04 — AI Features & Smart Experience
+Verified clean as of this pass: `npm install`, `npx tsc -b` (0 errors),
+`npm run build` (production build succeeds, service worker + manifest
+generated), `npm run lint` (0 errors — 3 pre-existing `react-refresh`
+warnings on files that intentionally export both a component and a small
+constant/context, which is safe and common in this codebase).
 
-Adds the full candidate-facing AI module (`/candidate/ai`): AI Dashboard,
-Resume Analysis, ATS Score, Job Recommendations, Cover Letter Generator,
-and Skill Gap Analysis — all calling real `ai-service` endpoints through
-the API Gateway (no dummy data). Recruiter AI tools (Job Description,
-Interview Questions, Candidate Recommendations) and the Notification
-drawer/preferences were already wired up in earlier phases and are
-unchanged.
+## PWA
 
-See `KNOWN_BACKEND_LIMITATIONS.md` items 5–8 for every place the AI
-module's UI is a real (not fabricated) subset of the Day 04 spec because
-of a genuine backend gap — resume text extraction, AI history, skill-gap
-roadmap/courses, and recommendation pagination.
+Configured via `vite-plugin-pwa`: installable (manifest + icons + our own
+install-prompt banner, since we suppress the browser's default one), app
+shell + static assets are precached by a generated service worker for
+offline load, dark/light theme colors. **API responses are deliberately
+excluded from any cache** — job listings, applications, and AI results must
+always be fetched fresh; only the compiled JS/CSS/HTML/icons are
+precached.
 
-Verified in this pass: `npm install`, `npx tsc -b` (0 errors), `npm run
-build` (production build succeeds), `npm run lint` (0 errors, 3
-pre-existing warnings unrelated to this change).
+## SEO
+
+Full meta description, Open Graph, and Twitter Card tags in `index.html`,
+plus `robots.txt` (disallowing authenticated app routes, allowing public
+job listings) and a `sitemap.xml` for the public routes. The canonical URL
+and OG image currently point at a placeholder domain
+(`aijobportal.example.com`) — replace with your real production domain
+before deploying.
+
+## Docker
+
+```bash
+docker build -t ai-job-portal-frontend .
+docker run -p 8080:80 ai-job-portal-frontend
+```
+
+Multi-stage build: `node:22-alpine` builds the Vite bundle, then
+`nginx:1.27-alpine` serves the static `dist/` output. `nginx.conf` handles
+SPA client-side routing fallback, gzip, immutable caching for hashed
+assets, and no-cache headers for `sw.js`/`manifest.webmanifest` so PWA
+updates propagate immediately. Override the API URL at build time:
+
+```bash
+docker build --build-arg VITE_API_BASE_URL=https://api.yourdomain.com/api/v1 -t ai-job-portal-frontend .
+```
+
+## Deployment
+
+- **Docker / Nginx** — use the Dockerfile above behind any reverse proxy.
+- **Vercel / Netlify** — standard Vite SPA deploy (`npm run build`, publish
+  `dist/`, SPA rewrite rule `/* → /index.html`); set `VITE_API_BASE_URL` as
+  a build-time environment variable in the platform's dashboard.
+
+In every case, `VITE_API_BASE_URL` must point at a publicly reachable API
+Gateway — this app never bypasses the gateway to call a microservice
+directly.
+
+## Known Limitations
+
+See `KNOWN_BACKEND_LIMITATIONS.md` — every item there is a real backend gap
+(missing endpoint, missing field, no pagination on a given endpoint, etc.),
+each with the exact fix needed. Nothing in this frontend fabricates data to
+paper over a gap; where the backend can't support a piece of the spec, the
+UI honestly shows a smaller, real feature instead.
+
+## License
+
+Portfolio / educational project. No license granted for commercial reuse
+without permission from the author.

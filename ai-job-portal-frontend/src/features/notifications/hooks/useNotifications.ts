@@ -18,7 +18,7 @@ export function useUnreadNotificationCount() {
   const { isAuthenticated } = useAuth();
   return useQuery({
     queryKey: NOTIFICATIONS_UNREAD_COUNT_KEY,
-    queryFn: () => notificationService.getUnreadCount().then((res) => res.data.count),
+    queryFn: () => notificationService.getUnreadCount().then((res) => res.data.unreadCount),
     enabled: isAuthenticated,
     refetchInterval: 30_000,
   });

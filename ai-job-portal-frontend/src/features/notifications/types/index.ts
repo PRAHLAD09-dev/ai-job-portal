@@ -16,7 +16,7 @@ export interface NotificationResponse {
 }
 
 export interface UnreadCountResponse {
-  count: number;
+  unreadCount: number;
 }
 
 export interface NotificationPreferenceResponse {

@@ -32,6 +32,7 @@ export function UserMenu() {
         className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-sm font-semibold text-white"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-label={`${user.firstName} ${user.lastName} account menu`}
       >
         {initials}
       </button>
