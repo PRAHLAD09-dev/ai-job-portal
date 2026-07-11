@@ -1,6 +1,7 @@
 package com.prahlad.aijobportal.aiservice.jobdescription.service.impl;
 
 import com.prahlad.aijobportal.aiservice.gemini.AiStructuredResponseService;
+import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import com.prahlad.aijobportal.aiservice.jobdescription.dto.request.JobDescriptionRequest;
 import com.prahlad.aijobportal.aiservice.jobdescription.dto.response.JobDescriptionResponse;
 import com.prahlad.aijobportal.aiservice.jobdescription.service.JobDescriptionService;
@@ -25,10 +26,13 @@ public class JobDescriptionServiceImpl implements JobDescriptionService {
             - description: a well-structured job description (responsibilities, qualifications) as a single string with newline characters between sections
             - requiredSkills: an array of short strings naming the key skills required for this role
 
+            %s
+
             Job title: %s
             Job type: %s
             Experience level: %s
-            Key points provided by the recruiter: %s
+            Key points provided by the recruiter:
+            %s
             """;
 
     private final AiStructuredResponseService aiStructuredResponseService;
@@ -38,7 +42,12 @@ public class JobDescriptionServiceImpl implements JobDescriptionService {
         String keyPoints = String.join("; ", request.keyPoints());
 
         return aiStructuredResponseService.generateStructured(
-                PROMPT_TEMPLATE.formatted(request.jobTitle(), request.jobType(), request.experienceLevel(), keyPoints),
+                PROMPT_TEMPLATE.formatted(
+                        UntrustedTextGuard.INSTRUCTION,
+                        UntrustedTextGuard.wrap("JOB_TITLE", request.jobTitle()),
+                        request.jobType(),
+                        request.experienceLevel(),
+                        UntrustedTextGuard.wrap("RECRUITER_KEY_POINTS", keyPoints)),
                 JobDescriptionResponse.class);
     }
 }

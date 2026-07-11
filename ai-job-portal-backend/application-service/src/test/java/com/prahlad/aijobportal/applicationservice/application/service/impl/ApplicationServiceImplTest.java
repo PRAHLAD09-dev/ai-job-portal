@@ -5,7 +5,8 @@ import com.prahlad.aijobportal.applicationservice.application.enums.ApplicationS
 import com.prahlad.aijobportal.applicationservice.application.exception.ApplicationNotFoundException;
 import com.prahlad.aijobportal.applicationservice.application.exception.InvalidApplicationStateException;
 import com.prahlad.aijobportal.applicationservice.application.repository.JobApplicationRepository;
-import com.prahlad.aijobportal.applicationservice.event.ApplicationEventPublisher;
+import com.prahlad.aijobportal.applicationservice.event.dto.ApplicationStatusChangedEvent;
+import com.prahlad.aijobportal.applicationservice.event.dto.CandidateShortlistedEvent;
 import com.prahlad.aijobportal.applicationservice.timeline.service.ApplicationTimelineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -85,8 +87,8 @@ class ApplicationServiceImplTest {
         assertThat(result.getStatus()).isEqualTo(ApplicationStatus.SHORTLISTED);
         verify(applicationTimelineService).recordTransition(application, ApplicationStatus.APPLIED,
                 ApplicationStatus.SHORTLISTED, actorId, "Great candidate");
-        verify(applicationEventPublisher).publishApplicationStatusChanged(any());
-        verify(applicationEventPublisher).publishCandidateShortlisted(any());
+        verify(applicationEventPublisher).publishEvent(any(ApplicationStatusChangedEvent.class));
+        verify(applicationEventPublisher).publishEvent(any(CandidateShortlistedEvent.class));
     }
 
     @Test

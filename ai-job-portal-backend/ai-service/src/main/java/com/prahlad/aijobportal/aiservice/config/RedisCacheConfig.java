@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.aiservice.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -34,10 +35,20 @@ public class RedisCacheConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // NOTE: the 2-arg activateDefaultTyping(validator, typing) overload defaults
+        // to JsonTypeInfo.As.WRAPPER_ARRAY, which wraps EVERY non-final value
+        // (including List/ArrayList itself) as a ["type", value] JSON array. Every
+        // cache in this service (jobRecommendations, candidateRecommendations,
+        // popularSkills, interviewQuestions) stores a List<...>, so on read-back
+        // the deserializer expects a JSON object and instead finds the wrapper
+        // array -> "Unexpected token (START_ARRAY)". Same bug, same fix already
+        // applied to Job Service's RedisCacheConfig: use the 3-arg overload with
+        // JsonTypeInfo.As.PROPERTY, which is collection-safe.
         ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
-                        ObjectMapper.DefaultTyping.NON_FINAL);
+                        ObjectMapper.DefaultTyping.NON_FINAL,
+                        JsonTypeInfo.As.PROPERTY);
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 

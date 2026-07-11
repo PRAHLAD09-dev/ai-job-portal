@@ -52,6 +52,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     if (SecurityContextHolder.getContext().getAuthentication() == null) {
                         UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
+                        if (!userDetails.isEnabled() || !userDetails.isAccountNonLocked()) {
+                            // The token's signature/expiry are still valid, but the
+                            // account has been disabled/locked since the token was
+                            // issued. Do not populate the SecurityContext: with no
+                            // Authentication set, anyRequest().authenticated() in
+                            // SecurityConfig rejects the request via
+                            // RestAuthenticationEntryPoint (401), making every
+                            // outstanding access token for this account unusable
+                            // immediately - not just after it naturally expires.
+                            log.debug("Rejecting JWT for disabled/locked account: {}", email);
+                            filterChain.doFilter(request, response);
+                            return;
+                        }
+
                         UsernamePasswordAuthenticationToken authentication =
                                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

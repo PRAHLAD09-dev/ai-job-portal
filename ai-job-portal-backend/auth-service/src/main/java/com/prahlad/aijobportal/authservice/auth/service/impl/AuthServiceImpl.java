@@ -42,6 +42,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +77,7 @@ public class AuthServiceImpl implements AuthService {
     private final EmailService emailService;
     private final AuthEventPublisher authEventPublisher;
     private final AuthProperties authProperties;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     private static final Set<RoleName> SELF_REGISTERABLE_ROLES = Set.of(RoleName.CANDIDATE, RoleName.RECRUITER);
 
@@ -108,7 +111,7 @@ public class AuthServiceImpl implements AuthService {
 
         issueEmailVerificationToken(savedUser);
 
-        authEventPublisher.publishUserRegistered(new UserRegisteredEvent(
+        applicationEventPublisher.publishEvent(new UserRegisteredEvent(
                 savedUser.getId(),
                 savedUser.getEmail(),
                 savedUser.getFirstName(),
@@ -179,8 +182,17 @@ public class AuthServiceImpl implements AuthService {
 
         // Rotate: revoke the old refresh token and issue a brand-new pair,
         // preventing replay of a stolen-but-already-used refresh token.
+        // saveAndFlush (rather than save) forces Hibernate to execute the
+        // versioned UPDATE immediately, so a concurrent rotation of the
+        // same token surfaces as an optimistic-lock conflict right here -
+        // not at some later, unrelated flush point - and only one of two
+        // racing requests can ever succeed.
         storedToken.setRevoked(true);
-        refreshTokenRepository.save(storedToken);
+        try {
+            refreshTokenRepository.saveAndFlush(storedToken);
+        } catch (ObjectOptimisticLockingFailureException ex) {
+            throw new InvalidTokenException("Refresh token is invalid or has been revoked");
+        }
         refreshTokenCacheService.evict(tokenHash);
 
         return issueAuthResponse(user);

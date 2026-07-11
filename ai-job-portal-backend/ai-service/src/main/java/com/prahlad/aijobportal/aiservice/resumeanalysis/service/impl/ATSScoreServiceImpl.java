@@ -1,6 +1,7 @@
 package com.prahlad.aijobportal.aiservice.resumeanalysis.service.impl;
 
 import com.prahlad.aijobportal.aiservice.gemini.AiStructuredResponseService;
+import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.request.AnalyzeResumeRequest;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.response.ATSScoreResponse;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.service.ATSScoreService;
@@ -25,6 +26,8 @@ public class ATSScoreServiceImpl implements ATSScoreService {
             - formattingIssues: an array of short strings describing formatting problems that could confuse an ATS parser (e.g. tables, columns, unusual fonts, missing section headers)
             - keywordGaps: an array of short strings naming common industry keywords/skills likely missing from this resume
 
+            %s
+
             Resume text:
             %s
             """;
@@ -34,7 +37,9 @@ public class ATSScoreServiceImpl implements ATSScoreService {
     @Override
     public ATSScoreResponse score(AnalyzeResumeRequest request) {
         ATSScoreResponse result = aiStructuredResponseService.generateStructured(
-                PROMPT_TEMPLATE.formatted(request.resumeText()), ATSScoreResponse.class);
+                PROMPT_TEMPLATE.formatted(UntrustedTextGuard.INSTRUCTION,
+                        UntrustedTextGuard.wrap("RESUME", request.resumeText())),
+                ATSScoreResponse.class);
 
         int clampedScore = Math.max(0, Math.min(100, result.atsScore()));
         return new ATSScoreResponse(clampedScore, result.formattingIssues(), result.keywordGaps());

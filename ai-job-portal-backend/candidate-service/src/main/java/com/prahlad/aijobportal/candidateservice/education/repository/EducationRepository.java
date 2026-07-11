@@ -12,4 +12,6 @@ public interface EducationRepository extends JpaRepository<Education, UUID> {
     List<Education> findByCandidateId(UUID candidateId);
 
     Optional<Education> findByIdAndCandidateId(UUID id, UUID candidateId);
+
+    boolean existsByCandidateId(UUID candidateId);
 }

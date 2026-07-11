@@ -5,7 +5,6 @@ import com.prahlad.aijobportal.jobservice.benefit.mapper.JobBenefitMapper;
 import com.prahlad.aijobportal.jobservice.category.entity.JobCategory;
 import com.prahlad.aijobportal.jobservice.category.service.JobCategoryLookupService;
 import com.prahlad.aijobportal.jobservice.config.RedisCacheConfig;
-import com.prahlad.aijobportal.jobservice.event.JobEventPublisher;
 import com.prahlad.aijobportal.jobservice.event.dto.JobClosedEvent;
 import com.prahlad.aijobportal.jobservice.event.dto.JobCreatedEvent;
 import com.prahlad.aijobportal.jobservice.event.dto.JobDeletedEvent;
@@ -40,6 +39,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -71,7 +71,7 @@ public class JobServiceImpl implements JobService {
     private final JobOwnershipGuard jobOwnershipGuard;
     private final JobSlugGenerator jobSlugGenerator;
     private final RecruiterLookupService recruiterLookupService;
-    private final JobEventPublisher jobEventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -106,7 +106,7 @@ public class JobServiceImpl implements JobService {
 
         Job saved = jobRepository.save(job);
 
-        jobEventPublisher.publishJobCreated(new JobCreatedEvent(
+        applicationEventPublisher.publishEvent(new JobCreatedEvent(
                 saved.getId(), saved.getCompanyId(), userId, saved.getTitle(), Instant.now()
         ));
 
@@ -145,7 +145,7 @@ public class JobServiceImpl implements JobService {
 
         Job saved = jobRepository.save(job);
 
-        jobEventPublisher.publishJobUpdated(new JobUpdatedEvent(
+        applicationEventPublisher.publishEvent(new JobUpdatedEvent(
                 saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()
         ));
 
@@ -163,7 +163,7 @@ public class JobServiceImpl implements JobService {
 
         jobRepository.delete(job);
 
-        jobEventPublisher.publishJobDeleted(new JobDeletedEvent(jobId, job.getCompanyId(), Instant.now()));
+        applicationEventPublisher.publishEvent(new JobDeletedEvent(jobId, job.getCompanyId(), Instant.now()));
         log.info("Deleted job id={}", jobId);
     }
 
@@ -184,7 +184,7 @@ public class JobServiceImpl implements JobService {
         job.setClosedAt(null);
         Job saved = jobRepository.save(job);
 
-        jobEventPublisher.publishJobPublished(new JobPublishedEvent(
+        applicationEventPublisher.publishEvent(new JobPublishedEvent(
                 saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()
         ));
 
@@ -208,7 +208,7 @@ public class JobServiceImpl implements JobService {
         job.setClosedAt(Instant.now());
         Job saved = jobRepository.save(job);
 
-        jobEventPublisher.publishJobClosed(new JobClosedEvent(
+        applicationEventPublisher.publishEvent(new JobClosedEvent(
                 saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()
         ));
 
@@ -333,7 +333,16 @@ public class JobServiceImpl implements JobService {
     public JobResponse getJobById(UUID jobId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new JobNotFoundException(jobId));
+        // incrementViewCount is a @Modifying(clearAutomatically = true) bulk
+        // update: it atomically increments view_count in the DB (unchanged
+        // behavior), and clearing the persistence context afterward detaches
+        // the 'job' loaded above. Because it's now detached, setting its
+        // in-memory viewCount here is safe - it just mirrors the value the
+        // bulk update already committed, and won't be re-flushed by Hibernate
+        // dirty-checking (there's nothing to check anymore; it's detached).
+        // Without this, the response would show the pre-increment count.
         jobRepository.incrementViewCount(jobId);
+        job.setViewCount(job.getViewCount() + 1);
         return jobMapper.toResponse(job);
     }
 
@@ -343,6 +352,7 @@ public class JobServiceImpl implements JobService {
         Job job = jobRepository.findBySlug(slug)
                 .orElseThrow(() -> new JobNotFoundException(slug));
         jobRepository.incrementViewCount(job.getId());
+        job.setViewCount(job.getViewCount() + 1);
         return jobMapper.toResponse(job);
     }
 

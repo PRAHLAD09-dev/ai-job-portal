@@ -11,7 +11,6 @@ import com.prahlad.aijobportal.recruiterservice.company.repository.CompanyReposi
 import com.prahlad.aijobportal.recruiterservice.company.service.CompanyAccessGuard;
 import com.prahlad.aijobportal.recruiterservice.company.service.CompanyService;
 import com.prahlad.aijobportal.recruiterservice.company.util.SlugGenerator;
-import com.prahlad.aijobportal.recruiterservice.event.RecruiterEventPublisher;
 import com.prahlad.aijobportal.recruiterservice.event.dto.CompanyCreatedEvent;
 import com.prahlad.aijobportal.recruiterservice.event.dto.CompanyUpdatedEvent;
 import com.prahlad.aijobportal.recruiterservice.feign.dto.UserSummaryResponse;
@@ -22,6 +21,8 @@ import com.prahlad.aijobportal.recruiterservice.recruiter.service.AuthUserLookup
 import com.prahlad.aijobportal.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +40,7 @@ public class CompanyServiceImpl implements CompanyService {
     private final CompanyAccessGuard companyAccessGuard;
     private final SlugGenerator slugGenerator;
     private final AuthUserLookupService authUserLookupService;
-    private final RecruiterEventPublisher recruiterEventPublisher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     @Transactional
@@ -76,9 +77,24 @@ public class CompanyServiceImpl implements CompanyService {
                 .owner(true)
                 .company(savedCompany)
                 .build();
-        recruiterRepository.save(recruiter);
 
-        recruiterEventPublisher.publishCompanyCreated(new CompanyCreatedEvent(
+        try {
+            // saveAndFlush (not save) so a concurrent createCompany() call
+            // for the same userId - which passed the existsByUserId()
+            // check above before either request committed - surfaces its
+            // uk_recruiters_user_id conflict synchronously, right here,
+            // rather than at some later unrelated flush point.
+            recruiterRepository.saveAndFlush(recruiter);
+        } catch (DataIntegrityViolationException ex) {
+            // The race loser: another createCompany() call for this same
+            // userId committed first. @Transactional rolls back this
+            // entire method on the exception below, so savedCompany is
+            // rolled back too - no orphaned Company row is left behind.
+            throw new RecruiterProfileAlreadyExistsException(
+                    "A recruiter profile already exists for this account. Each account may own only one company.");
+        }
+
+        applicationEventPublisher.publishEvent(new CompanyCreatedEvent(
                 savedCompany.getId(), userId, savedCompany.getName(), savedCompany.getSlug(), Instant.now()
         ));
 
@@ -101,7 +117,7 @@ public class CompanyServiceImpl implements CompanyService {
         companyMapper.updateEntityFromRequest(request, company);
         Company saved = companyRepository.save(company);
 
-        recruiterEventPublisher.publishCompanyUpdated(new CompanyUpdatedEvent(
+        applicationEventPublisher.publishEvent(new CompanyUpdatedEvent(
                 saved.getId(), saved.getName(), saved.getSlug(), Instant.now()
         ));
 
@@ -133,7 +149,7 @@ public class CompanyServiceImpl implements CompanyService {
                 company.getId(),
                 company.getActiveJobCount(),
                 company.getTotalHires(),
-                company.getRecruiters().size(),
+                (int) recruiterRepository.countByCompanyId(company.getId()),
                 company.getVerificationStatus()
         );
     }

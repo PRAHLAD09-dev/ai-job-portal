@@ -56,14 +56,14 @@ class SavedJobServiceImplTest {
 
         SavedJob persisted = SavedJob.builder().userId(userId).job(job).build();
         persisted.setId(UUID.randomUUID());
-        when(savedJobRepository.save(any(SavedJob.class))).thenReturn(persisted);
+        when(savedJobRepository.saveAndFlush(any(SavedJob.class))).thenReturn(persisted);
         when(jobMapper.toSummaryResponse(job)).thenReturn(mockSummary());
 
         SavedJobResponse response = savedJobService.saveJob(userId, jobId);
 
         assertThat(response).isNotNull();
         assertThat(response.job()).isNotNull();
-        verify(savedJobRepository).save(any(SavedJob.class));
+        verify(savedJobRepository).saveAndFlush(any(SavedJob.class));
     }
 
     @Test
@@ -73,7 +73,7 @@ class SavedJobServiceImplTest {
         assertThatThrownBy(() -> savedJobService.saveJob(userId, jobId))
                 .isInstanceOf(JobNotFoundException.class);
 
-        verify(savedJobRepository, never()).save(any());
+        verify(savedJobRepository, never()).saveAndFlush(any());
     }
 
     @Test
@@ -84,7 +84,7 @@ class SavedJobServiceImplTest {
         assertThatThrownBy(() -> savedJobService.saveJob(userId, jobId))
                 .isInstanceOf(SavedJobAlreadyExistsException.class);
 
-        verify(savedJobRepository, never()).save(any());
+        verify(savedJobRepository, never()).saveAndFlush(any());
     }
 
     @Test

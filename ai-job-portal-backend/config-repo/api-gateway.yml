@@ -51,6 +51,19 @@ spring:
           uri: lb://RECRUITER-SERVICE
           predicates:
             - Path=/api/v1/companies/**
+        # NOTE: application-service-recruiter (below) MUST be declared
+        # before recruiter-service-profile. Spring Cloud Gateway matches
+        # routes in declaration order and stops at the first predicate
+        # match. recruiter-service-profile's pattern (/api/v1/recruiter/**)
+        # would otherwise also match /api/v1/recruiter/applications/** and
+        # incorrectly route every recruiter-application request to
+        # RECRUITER-SERVICE (which has no such endpoint - only
+        # /recruiter/profile) instead of the actual owner, APPLICATION-
+        # SERVICE's RecruiterApplicationController.
+        - id: application-service-recruiter
+          uri: lb://APPLICATION-SERVICE
+          predicates:
+            - Path=/api/v1/recruiter/applications/**
         - id: recruiter-service-profile
           uri: lb://RECRUITER-SERVICE
           predicates:
@@ -67,10 +80,6 @@ spring:
           uri: lb://APPLICATION-SERVICE
           predicates:
             - Path=/api/v1/applications/**
-        - id: application-service-recruiter
-          uri: lb://APPLICATION-SERVICE
-          predicates:
-            - Path=/api/v1/recruiter/applications/**
         - id: ai-service
           uri: lb://AI-SERVICE
           predicates:
@@ -117,3 +126,25 @@ app:
 logging:
   pattern:
     level: "%5p [${spring.application.name},%X{correlationId}]"
+
+# Override the shared application.yml's resilience4j defaults for this
+# service only. The shared default ignores
+# com.prahlad.aijobportal.common.exception.ResourceNotFoundException, but
+# api-gateway is a pure WebFlux/reactive module and does NOT depend on the
+# `common` module (which is servlet-based), so that class isn't on this
+# service's classpath. Without this override, Spring fails to bind the
+# property (ClassNotFoundException) and the gateway won't start. Setting
+# an empty list here fully replaces the inherited list for api-gateway
+# only (Spring Boot does not merge list properties across config
+# sources) — candidate-service, recruiter-service, etc. still get the
+# original ignoreExceptions rule from application.yml since they do
+# depend on `common`.
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        ignoreExceptions: []
+  retry:
+    configs:
+      default:
+        ignoreExceptions: []

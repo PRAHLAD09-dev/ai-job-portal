@@ -5,6 +5,7 @@ import com.prahlad.aijobportal.aiservice.external.JobLookupService;
 import com.prahlad.aijobportal.aiservice.feign.dto.CandidateProfileSummaryResponse;
 import com.prahlad.aijobportal.aiservice.feign.dto.JobLiteResponse;
 import com.prahlad.aijobportal.aiservice.gemini.AiStructuredResponseService;
+import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import com.prahlad.aijobportal.aiservice.skillgap.dto.response.SkillGapResponse;
 import com.prahlad.aijobportal.aiservice.skillgap.service.SkillGapService;
 import lombok.RequiredArgsConstructor;
@@ -28,8 +29,13 @@ public class SkillGapServiceImpl implements SkillGapService {
             - missingSkills: an array of short strings naming skills the candidate is likely missing for roles they'd want, based on the job market sample
             - careerSuggestions: an array of short, actionable strings suggesting career moves or learning paths
 
-            Candidate's current skills: %s
-            Candidate's headline: %s
+            %s
+
+            Candidate's current skills:
+            %s
+
+            Candidate's headline:
+            %s
 
             Sample of open jobs (title | type | experience level):
             %s
@@ -53,7 +59,11 @@ public class SkillGapServiceImpl implements SkillGapService {
                 .collect(Collectors.joining("\n"));
 
         SkillGapResponse aiResult = aiStructuredResponseService.generateStructured(
-                PROMPT_TEMPLATE.formatted(String.join(", ", currentSkills), candidate.headline(), jobsBlock),
+                PROMPT_TEMPLATE.formatted(
+                        UntrustedTextGuard.INSTRUCTION,
+                        UntrustedTextGuard.wrap("CANDIDATE_SKILLS", String.join(", ", currentSkills)),
+                        UntrustedTextGuard.wrap("CANDIDATE_HEADLINE", candidate.headline()),
+                        UntrustedTextGuard.wrap("OPEN_JOBS_SAMPLE", jobsBlock)),
                 SkillGapResponse.class);
 
         log.info("Generated skill gap analysis for candidateId={}", candidateId);

@@ -16,15 +16,17 @@ import com.prahlad.aijobportal.applicationservice.application.service.CandidateA
 import com.prahlad.aijobportal.applicationservice.application.service.CandidateLookupService;
 import com.prahlad.aijobportal.applicationservice.application.service.JobLookupService;
 import com.prahlad.aijobportal.applicationservice.config.RedisCacheConfig;
-import com.prahlad.aijobportal.applicationservice.event.ApplicationEventPublisher;
 import com.prahlad.aijobportal.applicationservice.event.dto.ApplicationCreatedEvent;
 import com.prahlad.aijobportal.applicationservice.feign.dto.CandidateProfileSummaryResponse;
 import com.prahlad.aijobportal.applicationservice.feign.dto.JobSummaryResponse;
+import com.prahlad.aijobportal.applicationservice.feign.dto.ResumeStatus;
 import com.prahlad.aijobportal.applicationservice.timeline.service.ApplicationTimelineService;
 import com.prahlad.aijobportal.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -79,12 +81,24 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
                 .appliedAt(now)
                 .build();
 
-        JobApplication saved = applicationRepository.save(application);
+        JobApplication saved;
+        try {
+            // saveAndFlush (not save) so a concurrent apply() call for the
+            // same (jobId, candidateId) - which passed the existsBy...
+            // check above before either request committed - surfaces its
+            // uk_application_job_candidate conflict synchronously, right
+            // here, rather than at some later unrelated flush point.
+            saved = applicationRepository.saveAndFlush(application);
+        } catch (DataIntegrityViolationException ex) {
+            // The race loser: another apply() call for this same
+            // (jobId, candidateId) pair committed first.
+            throw new DuplicateApplicationException();
+        }
 
         applicationTimelineService.recordTransition(saved, null, ApplicationStatus.APPLIED, candidateUserId,
                 "Application submitted");
 
-        applicationEventPublisher.publishApplicationCreated(new ApplicationCreatedEvent(
+        applicationEventPublisher.publishEvent(new ApplicationCreatedEvent(
                 saved.getId(), saved.getJobId(), saved.getCandidateId(), saved.getCandidateUserId(),
                 saved.getCompanyId(), saved.getJobTitle(), saved.getAppliedAt()));
 
@@ -136,11 +150,24 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
         if (resumes == null || resumes.isEmpty()) {
             throw new ResumeNotFoundException();
         }
-        if (resumeId == null) {
-            return resumes.get(resumes.size() - 1).fileUrl();
+        if (resumeId != null) {
+            return resumes.stream()
+                    .filter(resume -> resume.id().equals(resumeId))
+                    .findFirst()
+                    .orElseThrow(ResumeNotFoundException::new)
+                    .fileUrl();
         }
+        // No resumeId supplied: use the candidate's current resume. This
+        // list may contain ARCHIVED resumes alongside the ACTIVE one (kept
+        // for version history), in no guaranteed order - Candidate Service
+        // has at most one ACTIVE resume per candidate at any time, so
+        // filtering on status is the only deterministic way to find it.
+        // Previously this picked resumes.get(resumes.size() - 1), which
+        // assumed list position meant recency; that assumption doesn't
+        // hold for a @OneToMany collection with no @OrderBy, and could
+        // silently attach an outdated archived resume to the application.
         return resumes.stream()
-                .filter(resume -> resume.id().equals(resumeId))
+                .filter(resume -> resume.status() == ResumeStatus.ACTIVE)
                 .findFirst()
                 .orElseThrow(ResumeNotFoundException::new)
                 .fileUrl();

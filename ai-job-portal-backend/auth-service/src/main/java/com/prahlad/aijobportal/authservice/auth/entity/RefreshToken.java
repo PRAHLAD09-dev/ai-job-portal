@@ -8,6 +8,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -53,6 +54,20 @@ public class RefreshToken extends BaseEntity {
 
     @Column(name = "device_info", length = 255)
     private String deviceInfo;
+
+    /**
+     * Optimistic-locking version, added to close a race condition in
+     * refresh-token rotation: two concurrent requests replaying the same
+     * refresh token could both read {@code isUsable() == true} before
+     * either committed its {@code revoked = true} update, letting both
+     * rotate successfully and issue two independent valid token pairs
+     * from a single token. With {@code @Version}, the second writer's
+     * UPDATE fails with an optimistic-lock conflict instead.
+     */
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private long version = 0L;
 
     public boolean isExpired() {
         return Instant.now().isAfter(expiresAt);

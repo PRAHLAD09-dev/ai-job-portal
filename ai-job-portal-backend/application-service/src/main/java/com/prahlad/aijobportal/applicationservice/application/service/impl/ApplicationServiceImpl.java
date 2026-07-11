@@ -7,7 +7,6 @@ import com.prahlad.aijobportal.applicationservice.application.exception.InvalidA
 import com.prahlad.aijobportal.applicationservice.application.repository.JobApplicationRepository;
 import com.prahlad.aijobportal.applicationservice.application.service.ApplicationService;
 import com.prahlad.aijobportal.applicationservice.config.RedisCacheConfig;
-import com.prahlad.aijobportal.applicationservice.event.ApplicationEventPublisher;
 import com.prahlad.aijobportal.applicationservice.event.dto.ApplicationStatusChangedEvent;
 import com.prahlad.aijobportal.applicationservice.event.dto.CandidateHiredEvent;
 import com.prahlad.aijobportal.applicationservice.event.dto.CandidateRejectedEvent;
@@ -17,6 +16,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,7 +98,7 @@ public class ApplicationServiceImpl implements ApplicationService {
 
         applicationTimelineService.recordTransition(saved, oldStatus, newStatus, changedBy, remarks);
 
-        applicationEventPublisher.publishApplicationStatusChanged(new ApplicationStatusChangedEvent(
+        applicationEventPublisher.publishEvent(new ApplicationStatusChangedEvent(
                 saved.getId(), saved.getJobId(), saved.getCandidateId(), saved.getCandidateUserId(),
                 saved.getCompanyId(), oldStatus, newStatus, changedBy, Instant.now()));
 
@@ -127,13 +127,13 @@ public class ApplicationServiceImpl implements ApplicationService {
 
     private void publishTerminalEvent(JobApplication application, ApplicationStatus newStatus, String remarks) {
         switch (newStatus) {
-            case SHORTLISTED -> applicationEventPublisher.publishCandidateShortlisted(new CandidateShortlistedEvent(
+            case SHORTLISTED -> applicationEventPublisher.publishEvent(new CandidateShortlistedEvent(
                     application.getId(), application.getJobId(), application.getCandidateId(),
                     application.getCandidateUserId(), application.getJobTitle(), Instant.now()));
-            case REJECTED -> applicationEventPublisher.publishCandidateRejected(new CandidateRejectedEvent(
+            case REJECTED -> applicationEventPublisher.publishEvent(new CandidateRejectedEvent(
                     application.getId(), application.getJobId(), application.getCandidateId(),
                     application.getCandidateUserId(), application.getJobTitle(), remarks, Instant.now()));
-            case HIRED -> applicationEventPublisher.publishCandidateHired(new CandidateHiredEvent(
+            case HIRED -> applicationEventPublisher.publishEvent(new CandidateHiredEvent(
                     application.getId(), application.getJobId(), application.getCandidateId(),
                     application.getCandidateUserId(), application.getCompanyId(), application.getJobTitle(), Instant.now()));
             default -> {

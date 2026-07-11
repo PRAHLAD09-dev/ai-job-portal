@@ -8,6 +8,7 @@ import com.prahlad.aijobportal.aiservice.external.RecruiterLookupService;
 import com.prahlad.aijobportal.aiservice.feign.dto.JobDetailSummaryResponse;
 import com.prahlad.aijobportal.aiservice.feign.dto.RecruiterSummaryResponse;
 import com.prahlad.aijobportal.aiservice.gemini.AiStructuredResponseService;
+import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import com.prahlad.aijobportal.aiservice.interview.dto.InterviewQuestionAiResult;
 import com.prahlad.aijobportal.aiservice.interview.dto.request.GenerateInterviewQuestionsRequest;
 import com.prahlad.aijobportal.aiservice.interview.dto.response.InterviewQuestionResponse;
@@ -42,10 +43,14 @@ public class InterviewQuestionServiceImpl implements InterviewQuestionService {
             HARD), and "category" (one of TECHNICAL, BEHAVIORAL, SITUATIONAL,
             SYSTEM_DESIGN, CULTURE_FIT).
 
+            %s
+
             Job title: %s
             Experience level: %s
-            Description: %s
-            Required skills: %s
+            Description:
+            %s
+            Required skills:
+            %s
             """;
 
     private final InterviewQuestionRepository interviewQuestionRepository;
@@ -74,8 +79,12 @@ public class InterviewQuestionServiceImpl implements InterviewQuestionService {
                         .orElse("");
 
         InterviewQuestionAiResult aiResult = aiStructuredResponseService.generateStructured(
-                PROMPT_TEMPLATE.formatted(request.countOrDefault(), job.title(), job.experienceLevel(),
-                        job.description(), skills),
+                PROMPT_TEMPLATE.formatted(request.countOrDefault(),
+                        UntrustedTextGuard.INSTRUCTION,
+                        UntrustedTextGuard.wrap("JOB_TITLE", job.title()),
+                        job.experienceLevel(),
+                        UntrustedTextGuard.wrap("JOB_DESCRIPTION", job.description()),
+                        UntrustedTextGuard.wrap("JOB_REQUIRED_SKILLS", skills)),
                 InterviewQuestionAiResult.class);
 
         List<InterviewQuestion> entities = new ArrayList<>();

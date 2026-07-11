@@ -3,7 +3,6 @@ package com.prahlad.aijobportal.jobservice.job.service.impl;
 import com.prahlad.aijobportal.jobservice.benefit.mapper.JobBenefitMapper;
 import com.prahlad.aijobportal.jobservice.category.entity.JobCategory;
 import com.prahlad.aijobportal.jobservice.category.service.JobCategoryLookupService;
-import com.prahlad.aijobportal.jobservice.event.JobEventPublisher;
 import com.prahlad.aijobportal.jobservice.feign.dto.RecruiterSummaryResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.request.CreateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobResponse;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.UUID;
@@ -53,7 +53,7 @@ class JobServiceImplTest {
     @Mock private JobOwnershipGuard jobOwnershipGuard;
     @Mock private JobSlugGenerator jobSlugGenerator;
     @Mock private RecruiterLookupService recruiterLookupService;
-    @Mock private JobEventPublisher jobEventPublisher;
+    @Mock private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private JobServiceImpl jobService;

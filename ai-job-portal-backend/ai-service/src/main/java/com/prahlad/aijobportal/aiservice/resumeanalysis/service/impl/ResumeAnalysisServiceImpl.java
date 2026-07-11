@@ -6,6 +6,7 @@ import com.prahlad.aijobportal.aiservice.event.dto.ATSCompletedEvent;
 import com.prahlad.aijobportal.aiservice.event.dto.ResumeAnalyzedEvent;
 import com.prahlad.aijobportal.aiservice.exception.AiGenerationException;
 import com.prahlad.aijobportal.aiservice.gemini.AiStructuredResponseService;
+import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.ResumeAnalysisAiResult;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.request.AnalyzeResumeRequest;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.response.ResumeAnalysisResponse;
@@ -51,6 +52,8 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
             - missingSkills: an array of short strings naming skills commonly expected for this candidate's apparent target roles but missing from the resume
             - recommendations: an array of short, actionable strings for improving the resume
 
+            %s
+
             Resume text:
             %s
             """;
@@ -76,7 +79,9 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
         }
 
         ResumeAnalysisAiResult aiResult = aiStructuredResponseService.generateStructured(
-                PROMPT_TEMPLATE.formatted(request.resumeText()), ResumeAnalysisAiResult.class);
+                PROMPT_TEMPLATE.formatted(UntrustedTextGuard.INSTRUCTION,
+                        UntrustedTextGuard.wrap("RESUME", request.resumeText())),
+                ResumeAnalysisAiResult.class);
 
         int clampedScore = Math.max(0, Math.min(100, aiResult.atsScore()));
 

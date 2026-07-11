@@ -13,6 +13,7 @@ import com.prahlad.aijobportal.jobservice.job.service.SavedJobService;
 import com.prahlad.aijobportal.common.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -44,7 +45,19 @@ public class SavedJobServiceImpl implements SavedJobService {
                 .job(job)
                 .build();
 
-        SavedJob saved = savedJobRepository.save(savedJob);
+        SavedJob saved;
+        try {
+            // saveAndFlush (not save) so a concurrent saveJob() call for
+            // the same (userId, jobId) - which passed the existsBy...
+            // check above before either request committed - surfaces its
+            // uk_saved_jobs_user_job conflict synchronously, right here,
+            // rather than at some later unrelated flush point.
+            saved = savedJobRepository.saveAndFlush(savedJob);
+        } catch (DataIntegrityViolationException ex) {
+            // The race loser: another saveJob() call for this same
+            // (userId, jobId) pair committed first.
+            throw new SavedJobAlreadyExistsException();
+        }
         log.info("User id={} saved job id={}", userId, jobId);
         return new SavedJobResponse(saved.getId(), jobMapper.toSummaryResponse(job), saved.getCreatedAt());
     }

@@ -20,4 +20,6 @@ public interface ResumeRepository extends JpaRepository<Resume, UUID> {
 
     @Query("select coalesce(max(r.versionNumber), 0) from Resume r where r.candidate.id = :candidateId")
     int findMaxVersionNumberByCandidateId(@Param("candidateId") UUID candidateId);
+
+    boolean existsByCandidateId(UUID candidateId);
 }

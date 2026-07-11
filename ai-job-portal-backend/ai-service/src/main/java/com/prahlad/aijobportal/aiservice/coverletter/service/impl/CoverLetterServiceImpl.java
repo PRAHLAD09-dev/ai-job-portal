@@ -9,6 +9,7 @@ import com.prahlad.aijobportal.aiservice.external.JobLookupService;
 import com.prahlad.aijobportal.aiservice.feign.dto.CandidateProfileSummaryResponse;
 import com.prahlad.aijobportal.aiservice.feign.dto.JobDetailSummaryResponse;
 import com.prahlad.aijobportal.aiservice.gemini.GeminiClient;
+import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,8 @@ public class CoverLetterServiceImpl implements CoverLetterService {
             3-4 short paragraphs, written in first person as the candidate, with no
             placeholder brackets left unfilled. Do not invent facts about the
             candidate beyond what is given.
+
+            %s
 
             Candidate:
             Name: %s
@@ -66,8 +69,15 @@ public class CoverLetterServiceImpl implements CoverLetterService {
         String notes = StringUtils.hasText(request.additionalNotes()) ? request.additionalNotes() : "None";
 
         String prompt = PROMPT_TEMPLATE.formatted(
-                candidate.fullName(), candidate.headline(), candidate.summary(), skills,
-                job.title(), job.companyName(), job.description(), notes);
+                UntrustedTextGuard.INSTRUCTION,
+                UntrustedTextGuard.wrap("CANDIDATE_NAME", candidate.fullName()),
+                UntrustedTextGuard.wrap("CANDIDATE_HEADLINE", candidate.headline()),
+                UntrustedTextGuard.wrap("CANDIDATE_SUMMARY", candidate.summary()),
+                UntrustedTextGuard.wrap("CANDIDATE_SKILLS", skills),
+                UntrustedTextGuard.wrap("JOB_TITLE", job.title()),
+                UntrustedTextGuard.wrap("JOB_COMPANY", job.companyName()),
+                UntrustedTextGuard.wrap("JOB_DESCRIPTION", job.description()),
+                UntrustedTextGuard.wrap("CANDIDATE_NOTES", notes));
 
         String coverLetterText;
         try {

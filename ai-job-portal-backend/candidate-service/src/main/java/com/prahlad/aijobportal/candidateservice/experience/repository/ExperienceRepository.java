@@ -12,4 +12,6 @@ public interface ExperienceRepository extends JpaRepository<Experience, UUID> {
     List<Experience> findByCandidateId(UUID candidateId);
 
     Optional<Experience> findByIdAndCandidateId(UUID id, UUID candidateId);
+
+    boolean existsByCandidateId(UUID candidateId);
 }

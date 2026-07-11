@@ -11,9 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientRequestException;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 
 /**
  * The only class in this service that knows Gemini's REST contract.
@@ -62,9 +65,49 @@ public class GeminiTextGenerationClient implements GeminiClient {
 
     @SuppressWarnings("unused")
     private CompletableFuture<String> generateTextFallback(String prompt, Throwable throwable) {
-        log.error("Gemini API call failed after retries/circuit breaker", throwable);
+        logGeminiFailureSafely(throwable);
         return CompletableFuture.failedFuture(
                 new AiGenerationException("The AI service is temporarily unavailable. Please try again shortly.", throwable));
+    }
+
+    /**
+     * The Gemini API key is passed in the request URL's {@code ?key=}
+     * query parameter (Google's required auth mechanism for this API -
+     * there's no header-based alternative for the public Generative
+     * Language API). {@link WebClientResponseException} and
+     * {@link WebClientRequestException} both include the full outbound
+     * request URI - key included - in their own {@code getMessage()}/
+     * {@code toString()}. Logging either of those directly (or logging
+     * {@code throwable} itself, which SLF4J renders via that same
+     * {@code toString()} as the first line of the stack trace) would
+     * write the live API key to this service's own logs in plaintext on
+     * every Gemini failure. This method logs only pre-approved, safe
+     * fields - HTTP status code, exception type - and never the
+     * exception's message or the request URI/endpoint itself.
+     */
+    private void logGeminiFailureSafely(Throwable throwable) {
+        Throwable cause = unwrapCompletionException(throwable);
+
+        if (cause instanceof WebClientResponseException responseException) {
+            log.error("Gemini generateContent call failed: HTTP {} {} from the Gemini API",
+                    responseException.getStatusCode().value(), responseException.getStatusText());
+        } else if (cause instanceof WebClientRequestException) {
+            log.error("Gemini generateContent call failed: unable to reach the Gemini API ({})",
+                    cause.getClass().getSimpleName());
+        } else {
+            // Other failure types (timeout, circuit breaker open, JSON
+            // parsing, etc.) don't carry the request URI in their
+            // message, so it's safe to log them with their full context.
+            log.error("Gemini generateContent call failed after retries/circuit breaker: {}",
+                    cause.getClass().getSimpleName(), cause);
+        }
+    }
+
+    private Throwable unwrapCompletionException(Throwable throwable) {
+        if (throwable instanceof CompletionException && throwable.getCause() != null) {
+            return throwable.getCause();
+        }
+        return throwable;
     }
 
     private String extractText(GeminiGenerateContentResponse response) {

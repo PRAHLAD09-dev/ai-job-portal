@@ -15,6 +15,7 @@ import com.prahlad.aijobportal.aiservice.feign.dto.JobDetailSummaryResponse;
 import com.prahlad.aijobportal.aiservice.feign.dto.JobLiteResponse;
 import com.prahlad.aijobportal.aiservice.feign.dto.RecruiterSummaryResponse;
 import com.prahlad.aijobportal.aiservice.gemini.AiStructuredResponseService;
+import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import com.prahlad.aijobportal.aiservice.recommendation.dto.RecommendationAiResult;
 import com.prahlad.aijobportal.aiservice.recommendation.dto.response.CandidateRecommendationResponse;
 import com.prahlad.aijobportal.aiservice.recommendation.dto.response.JobRecommendationResponse;
@@ -48,6 +49,8 @@ public class RecommendationServiceImpl implements RecommendationService {
             the match). Include only jobs that are a reasonable fit; omit poor
             matches entirely. Order the array from best match to worst.
 
+            %s
+
             Candidate profile:
             %s
 
@@ -63,6 +66,8 @@ public class RecommendationServiceImpl implements RecommendationService {
             given below, unmodified), "matchScore" (integer 0-100), and "reasoning"
             (a short string explaining the fit). Order the array from best match to
             worst.
+
+            %s
 
             Job:
             %s
@@ -99,7 +104,9 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .collect(Collectors.joining("\n"));
 
         RecommendationAiResult aiResult = aiStructuredResponseService.generateStructured(
-                JOB_RECOMMENDATION_PROMPT.formatted(describeCandidate(candidate), jobsBlock),
+                JOB_RECOMMENDATION_PROMPT.formatted(UntrustedTextGuard.INSTRUCTION,
+                        UntrustedTextGuard.wrap("CANDIDATE_PROFILE", describeCandidate(candidate)),
+                        UntrustedTextGuard.wrap("OPEN_JOBS", jobsBlock)),
                 RecommendationAiResult.class);
 
         jobRecommendationRepository.deleteByCandidateId(candidateId);
@@ -153,7 +160,9 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .collect(Collectors.joining("\n"));
 
         RecommendationAiResult aiResult = aiStructuredResponseService.generateStructured(
-                CANDIDATE_RECOMMENDATION_PROMPT.formatted(describeJob(job), applicantsBlock),
+                CANDIDATE_RECOMMENDATION_PROMPT.formatted(UntrustedTextGuard.INSTRUCTION,
+                        UntrustedTextGuard.wrap("JOB", describeJob(job)),
+                        UntrustedTextGuard.wrap("APPLICANTS", applicantsBlock)),
                 RecommendationAiResult.class);
 
         List<CandidateRecommendationResponse> responses = aiResult.recommendations().stream()

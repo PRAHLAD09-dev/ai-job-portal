@@ -13,9 +13,20 @@ spring:
     consumer:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "com.prahlad.aijobportal.*"
+      # Every @KafkaListener in this codebase deliberately declares a raw
+      # String payload and parses it itself with ObjectMapper.readValue(...)
+      # into its OWN locally-declared mirror DTO (see AiEventConsumer's and
+      # NotificationEventConsumer's class-level javadoc) — producer and
+      # consumer live in different services/packages, so the producer's
+      # fully-qualified class name is never resolvable on the consumer's
+      # classpath. JsonDeserializer was wired here regardless, and it still
+      # tries to resolve that unresolvable producer class name from the
+      # Kafka __TypeId__ header BEFORE the message ever reaches the listener
+      # method — causing a ClassNotFoundException poison-pill loop that
+      # blocks the partition forever. StringDeserializer matches what every
+      # listener actually expects and lets each consumer's manual parsing
+      # (which already ignores the type header) do its job.
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -74,11 +85,23 @@ resilience4j:
         permittedNumberOfCallsInHalfOpenState: 3
         waitDurationInOpenState: 10s
         failureRateThreshold: 50
+        # A downstream 404 (decoded by FeignErrorDecoder into
+        # ResourceNotFoundException) is a legitimate business outcome, not a
+        # sign that the dependency is unreachable. Without this, every 404
+        # was counted as a circuit-breaker failure AND routed through each
+        # caller's fallbackMethod, which unconditionally rethrows a generic
+        # "<Service> is temporarily unavailable" 503 - masking real 404s
+        # (e.g. GET /recruiter/profile for a recruiter who hasn't finished
+        # onboarding) as a fake 503.
+        ignoreExceptions:
+          - com.prahlad.aijobportal.common.exception.ResourceNotFoundException
   retry:
     configs:
       default:
         maxAttempts: 3
         waitDuration: 500ms
+        ignoreExceptions:
+          - com.prahlad.aijobportal.common.exception.ResourceNotFoundException
   timelimiter:
     configs:
       default:

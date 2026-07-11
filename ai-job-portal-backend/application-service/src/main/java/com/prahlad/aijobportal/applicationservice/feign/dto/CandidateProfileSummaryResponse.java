@@ -22,7 +22,8 @@ public record CandidateProfileSummaryResponse(
     public record ResumeSummaryResponse(
             UUID id,
             String fileName,
-            String fileUrl
+            String fileUrl,
+            ResumeStatus status
     ) {
     }
 }

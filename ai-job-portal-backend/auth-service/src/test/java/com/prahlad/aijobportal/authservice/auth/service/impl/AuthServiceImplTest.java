@@ -14,6 +14,7 @@ import com.prahlad.aijobportal.authservice.auth.repository.RefreshTokenRepositor
 import com.prahlad.aijobportal.authservice.auth.service.RefreshTokenCacheService;
 import com.prahlad.aijobportal.authservice.email.EmailService;
 import com.prahlad.aijobportal.authservice.event.AuthEventPublisher;
+import com.prahlad.aijobportal.authservice.event.dto.UserRegisteredEvent;
 import com.prahlad.aijobportal.authservice.security.config.AuthProperties;
 import com.prahlad.aijobportal.authservice.security.jwt.JwtTokenProvider;
 import com.prahlad.aijobportal.authservice.user.entity.Role;
@@ -29,6 +30,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
@@ -72,6 +74,8 @@ class AuthServiceImplTest {
     private AuthEventPublisher authEventPublisher;
     @Mock
     private AuthProperties authProperties;
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -113,7 +117,7 @@ class AuthServiceImplTest {
 
         assertThat(response.email()).isEqualTo("jane.doe@example.com");
         verify(emailService).sendEmailVerificationEmail(eq("jane.doe@example.com"), eq("Jane"), anyString());
-        verify(authEventPublisher).publishUserRegistered(any());
+        verify(applicationEventPublisher).publishEvent(any(UserRegisteredEvent.class));
     }
 
     @Test

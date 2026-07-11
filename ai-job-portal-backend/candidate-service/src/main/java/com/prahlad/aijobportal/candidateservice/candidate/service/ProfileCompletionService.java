@@ -2,9 +2,13 @@ package com.prahlad.aijobportal.candidateservice.candidate.service;
 
 import com.prahlad.aijobportal.candidateservice.candidate.entity.Candidate;
 import com.prahlad.aijobportal.candidateservice.candidate.repository.CandidateRepository;
-import com.prahlad.aijobportal.candidateservice.event.CandidateEventPublisher;
+import com.prahlad.aijobportal.candidateservice.education.repository.EducationRepository;
 import com.prahlad.aijobportal.candidateservice.event.dto.CandidateProfileUpdatedEvent;
+import com.prahlad.aijobportal.candidateservice.experience.repository.ExperienceRepository;
+import com.prahlad.aijobportal.candidateservice.resume.repository.ResumeRepository;
+import com.prahlad.aijobportal.candidateservice.skill.repository.SkillRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -22,13 +26,26 @@ import java.time.Instant;
  * Weighting (out of 100): basic info 30, headline/summary 15,
  * at least one education entry 15, at least one experience entry 15,
  * at least one skill 15, at least one active resume 10.
+ *
+ * NOTE: "has at least one X" is checked via existsByCandidateId(...) on
+ * each sub-resource repository rather than candidate.getEducations().isEmpty()
+ * (etc). The entity's collections are FetchType.LAZY, so calling
+ * .isEmpty() on four collections forced four full lazy-load SELECTs on
+ * every single recalculation - which runs after nearly every profile,
+ * education, experience, skill, and resume mutation. existsBy... issues
+ * the same lightweight existence check without ever materializing the
+ * collections.
  */
 @Service
 @RequiredArgsConstructor
 public class ProfileCompletionService {
 
     private final CandidateRepository candidateRepository;
-    private final CandidateEventPublisher candidateEventPublisher;
+    private final EducationRepository educationRepository;
+    private final ExperienceRepository experienceRepository;
+    private final SkillRepository skillRepository;
+    private final ResumeRepository resumeRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public void recalculate(Candidate candidate) {
@@ -40,23 +57,23 @@ public class ProfileCompletionService {
         if (StringUtils.hasText(candidate.getHeadline()) && StringUtils.hasText(candidate.getSummary())) {
             score += 15;
         }
-        if (!candidate.getEducations().isEmpty()) {
+        if (educationRepository.existsByCandidateId(candidate.getId())) {
             score += 15;
         }
-        if (!candidate.getExperiences().isEmpty()) {
+        if (experienceRepository.existsByCandidateId(candidate.getId())) {
             score += 15;
         }
-        if (!candidate.getSkills().isEmpty()) {
+        if (skillRepository.existsByCandidateId(candidate.getId())) {
             score += 15;
         }
-        if (!candidate.getResumes().isEmpty()) {
+        if (resumeRepository.existsByCandidateId(candidate.getId())) {
             score += 10;
         }
 
         candidate.setProfileCompletionPercentage(score);
         candidateRepository.save(candidate);
 
-        candidateEventPublisher.publishCandidateProfileUpdated(new CandidateProfileUpdatedEvent(
+        applicationEventPublisher.publishEvent(new CandidateProfileUpdatedEvent(
                 candidate.getId(), candidate.getUserId(), score, Instant.now()
         ));
     }

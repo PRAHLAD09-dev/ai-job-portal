@@ -10,9 +10,9 @@ import com.prahlad.aijobportal.applicationservice.application.repository.JobAppl
 import com.prahlad.aijobportal.applicationservice.application.service.ApplicationService;
 import com.prahlad.aijobportal.applicationservice.application.service.CandidateLookupService;
 import com.prahlad.aijobportal.applicationservice.application.service.JobLookupService;
-import com.prahlad.aijobportal.applicationservice.event.ApplicationEventPublisher;
 import com.prahlad.aijobportal.applicationservice.feign.dto.CandidateProfileSummaryResponse;
 import com.prahlad.aijobportal.applicationservice.feign.dto.JobSummaryResponse;
+import com.prahlad.aijobportal.applicationservice.feign.dto.ResumeStatus;
 import com.prahlad.aijobportal.applicationservice.timeline.service.ApplicationTimelineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
 import java.util.List;
@@ -63,9 +64,10 @@ class CandidateApplicationServiceImplTest {
 
         job = new JobSummaryResponse(jobId, companyId, "Acme Inc", "Backend Engineer", "PUBLISHED", null);
         candidate = new CandidateProfileSummaryResponse(candidateId, candidateUserId, "jane@example.com", "Jane Doe",
-                List.of(new CandidateProfileSummaryResponse.ResumeSummaryResponse(UUID.randomUUID(), "resume.pdf", "https://cdn.example.com/resume.pdf")));
+                List.of(new CandidateProfileSummaryResponse.ResumeSummaryResponse(UUID.randomUUID(), "resume.pdf",
+                        "https://cdn.example.com/resume.pdf", ResumeStatus.ACTIVE)));
 
-        lenient().when(applicationRepository.save(any(JobApplication.class))).thenAnswer(inv -> inv.getArgument(0));
+        lenient().when(applicationRepository.saveAndFlush(any(JobApplication.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
     @Test
@@ -132,7 +134,7 @@ class CandidateApplicationServiceImplTest {
 
     private void verify_savedApplicationHasExpectedFields() {
         org.mockito.ArgumentCaptor<JobApplication> captor = org.mockito.ArgumentCaptor.forClass(JobApplication.class);
-        org.mockito.Mockito.verify(applicationRepository).save(captor.capture());
+        org.mockito.Mockito.verify(applicationRepository).saveAndFlush(captor.capture());
 
         JobApplication saved = captor.getValue();
         assertThat(saved.getCandidateId()).isEqualTo(candidateId);

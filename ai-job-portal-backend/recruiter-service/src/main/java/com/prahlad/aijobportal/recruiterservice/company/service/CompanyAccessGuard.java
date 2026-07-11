@@ -23,10 +23,21 @@ public class CompanyAccessGuard {
 
     /**
      * Resolves the authenticated user's recruiter profile and returns
-     * their company — but only if they actually belong to it.
+     * their company — but only if they actually belong to it AND are its
+     * owner. Every company-mutating operation (update, delete, asset
+     * upload/delete, location/social-link management) goes through this
+     * guard; today the only way a Recruiter row is created is via
+     * createCompany() with owner=true, so this check changes nothing
+     * about current behavior. It exists defensively for when a
+     * non-owner "team member" recruiter (already anticipated by the
+     * Recruiter entity's owner flag and one-company-to-many-recruiters
+     * mapping) is introduced.
      */
     public Company resolveOwnedCompany(UUID userId) {
         Recruiter recruiter = recruiterLookupService.getByUserIdOrThrow(userId);
+        if (!recruiter.isOwner()) {
+            throw new RecruiterAccessDeniedException("Only the company owner may perform this action");
+        }
         return recruiter.getCompany();
     }
 

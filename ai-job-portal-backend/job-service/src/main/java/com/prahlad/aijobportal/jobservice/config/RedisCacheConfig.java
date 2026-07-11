@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.jobservice.config;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -36,10 +37,24 @@ public class RedisCacheConfig {
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        // NOTE: the 2-arg activateDefaultTyping(validator, typing) overload defaults
+        // to JsonTypeInfo.As.WRAPPER_ARRAY, which wraps EVERY non-final value
+        // (including List/ArrayList itself) as a ["type", value] JSON array. For a
+        // @Cacheable method returning List<JobCategoryResponse>, that produces a
+        // nested wrapper-array structure. On read-back, RedisCache resolves the
+        // target type from the cache value's raw type (generics erased at runtime),
+        // so the deserializer ends up expecting a JSON object where it instead
+        // finds the wrapper array -> "Unexpected token (START_ARRAY), expected
+        // START_OBJECT". Spring's own zero-arg GenericJackson2JsonRedisSerializer
+        // avoids this by using PROPERTY-based typing (an "@class" field inside each
+        // object) instead of WRAPPER_ARRAY - use the explicit 3-arg overload to get
+        // the same, collection-safe behavior on our custom ObjectMapper (needed here
+        // for JavaTimeModule support).
         ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
-                        ObjectMapper.DefaultTyping.NON_FINAL);
+                        ObjectMapper.DefaultTyping.NON_FINAL,
+                        JsonTypeInfo.As.PROPERTY);
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 

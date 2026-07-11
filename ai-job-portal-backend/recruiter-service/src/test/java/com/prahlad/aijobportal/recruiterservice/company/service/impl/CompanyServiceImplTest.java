@@ -10,7 +10,7 @@ import com.prahlad.aijobportal.recruiterservice.company.mapper.CompanyMapper;
 import com.prahlad.aijobportal.recruiterservice.company.repository.CompanyRepository;
 import com.prahlad.aijobportal.recruiterservice.company.service.CompanyAccessGuard;
 import com.prahlad.aijobportal.recruiterservice.company.util.SlugGenerator;
-import com.prahlad.aijobportal.recruiterservice.event.RecruiterEventPublisher;
+import com.prahlad.aijobportal.recruiterservice.event.dto.CompanyCreatedEvent;
 import com.prahlad.aijobportal.recruiterservice.feign.dto.UserSummaryResponse;
 import com.prahlad.aijobportal.recruiterservice.recruiter.entity.Recruiter;
 import com.prahlad.aijobportal.recruiterservice.recruiter.enums.RecruiterTitle;
@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.Instant;
 import java.util.List;
@@ -45,7 +46,7 @@ class CompanyServiceImplTest {
     @Mock private CompanyAccessGuard companyAccessGuard;
     @Mock private SlugGenerator slugGenerator;
     @Mock private AuthUserLookupService authUserLookupService;
-    @Mock private RecruiterEventPublisher recruiterEventPublisher;
+    @Mock private ApplicationEventPublisher applicationEventPublisher;
 
     @InjectMocks
     private CompanyServiceImpl companyService;
@@ -94,8 +95,13 @@ class CompanyServiceImplTest {
 
         assertThat(response.slug()).isEqualTo(slug);
         assertThat(response.name()).isEqualTo("Acme Corp");
-        verify(recruiterRepository).save(any(Recruiter.class));
-        verify(recruiterEventPublisher).publishCompanyCreated(any());
+        // saveAndFlush (not save) since M2's fix forces the versioned/unique-
+        // constraint conflict to surface synchronously within createCompany().
+        verify(recruiterRepository).saveAndFlush(any(Recruiter.class));
+        // Publishing moved to a Spring ApplicationEvent, consumed AFTER_COMMIT
+        // by CompanyEventListener (M1's fix) - the unit under test only
+        // needs to prove the event was raised, not that Kafka was called.
+        verify(applicationEventPublisher).publishEvent(any(CompanyCreatedEvent.class));
     }
 
     @Test
@@ -107,6 +113,6 @@ class CompanyServiceImplTest {
                 .isInstanceOf(RecruiterProfileAlreadyExistsException.class);
 
         verify(companyRepository, never()).save(any());
-        verify(recruiterRepository, never()).save(any());
+        verify(recruiterRepository, never()).saveAndFlush(any());
     }
 }

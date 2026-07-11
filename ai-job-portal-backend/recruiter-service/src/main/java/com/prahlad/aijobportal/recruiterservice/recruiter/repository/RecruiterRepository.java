@@ -11,4 +11,6 @@ public interface RecruiterRepository extends JpaRepository<Recruiter, UUID> {
     Optional<Recruiter> findByUserId(UUID userId);
 
     boolean existsByUserId(UUID userId);
+
+    long countByCompanyId(UUID companyId);
 }

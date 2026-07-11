@@ -66,6 +66,19 @@ app:
   internal:
     service-token: ${INTERNAL_SERVICE_TOKEN}
 
+  # ---- First-admin bootstrap (AdminBootstrapRunner) ----
+  # There is no self-registration path and no other mechanism to create an
+  # ADMIN/SUPER_ADMIN account, so this runs once on startup to create
+  # exactly one default administrator if none exists yet. No defaults for
+  # email/password on purpose - if unset, the runner logs a warning and
+  # skips bootstrap rather than using a guessable credential.
+  admin-bootstrap:
+    enabled: ${ADMIN_BOOTSTRAP_ENABLED:true}
+    email: ${ADMIN_BOOTSTRAP_EMAIL:}
+    password: ${ADMIN_BOOTSTRAP_PASSWORD:}
+    first-name: ${ADMIN_BOOTSTRAP_FIRST_NAME:Platform}
+    last-name: ${ADMIN_BOOTSTRAP_LAST_NAME:Administrator}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
