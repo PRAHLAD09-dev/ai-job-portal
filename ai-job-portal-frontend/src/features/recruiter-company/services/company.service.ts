@@ -4,6 +4,7 @@ import type {
   CompanyAssetResponse,
   CompanyLocationRequest,
   CompanyLocationResponse,
+  CompanyPublicResponse,
   CompanyResponse,
   CompanySocialLinkRequest,
   CompanySocialLinkResponse,
@@ -26,6 +27,10 @@ export const companyService = {
 
   getStatistics: () =>
     apiClient.get<ApiResponse<CompanyStatisticsResponse>>("/companies/me/statistics").then((res) => res.data),
+
+  /** GET /companies/{slug}/public — no authentication required. */
+  getPublicProfile: (slug: string) =>
+    apiClient.get<ApiResponse<CompanyPublicResponse>>(`/companies/${slug}/public`).then((res) => res.data),
 };
 
 /** Maps 1:1 to recruiter-service CompanyLocationController (/companies/me/locations). */

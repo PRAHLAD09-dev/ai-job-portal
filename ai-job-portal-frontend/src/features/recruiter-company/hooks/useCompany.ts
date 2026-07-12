@@ -17,6 +17,17 @@ export const COMPANY_QUERY_KEY = ["recruiter", "company"] as const;
 export const COMPANY_STATISTICS_QUERY_KEY = ["recruiter", "company", "statistics"] as const;
 export const COMPANY_LOCATIONS_QUERY_KEY = ["recruiter", "company", "locations"] as const;
 export const COMPANY_SOCIAL_LINKS_QUERY_KEY = ["recruiter", "company", "social-links"] as const;
+export const COMPANY_PUBLIC_PROFILE_QUERY_KEY = ["company", "public"] as const;
+
+/** GET /companies/{slug}/public — candidate-facing, no authentication required. */
+export function useCompanyPublicProfile(slug: string | undefined) {
+  return useQuery({
+    queryKey: [...COMPANY_PUBLIC_PROFILE_QUERY_KEY, slug],
+    queryFn: () => companyService.getPublicProfile(slug as string).then((res) => res.data),
+    enabled: !!slug,
+    staleTime: 60_000,
+  });
+}
 
 /** A 404 means the recruiter has not registered a company yet — treated as a normal `null` result. */
 export function useMyCompany() {

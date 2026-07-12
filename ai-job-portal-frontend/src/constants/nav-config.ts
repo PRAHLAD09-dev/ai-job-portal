@@ -9,7 +9,6 @@ import {
   Settings,
   Building2,
   Users,
-  BarChart3,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 
@@ -43,7 +42,6 @@ export const ADMIN_NAV: NavItem[] = [
   { label: "Users", path: ROUTES.ADMIN_USERS, icon: Users },
   { label: "Companies", path: ROUTES.ADMIN_COMPANIES, icon: Building2 },
   { label: "Jobs", path: ROUTES.ADMIN_JOBS, icon: Briefcase },
-  { label: "Analytics", path: ROUTES.ADMIN_DASHBOARD, icon: BarChart3 },
 ];
 
 export const GUEST_NAV: NavItem[] = [

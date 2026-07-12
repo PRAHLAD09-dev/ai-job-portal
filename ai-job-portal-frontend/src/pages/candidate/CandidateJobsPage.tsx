@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bookmark, Search, SlidersHorizontal } from "lucide-react";
+import { Bell, Bookmark, Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -51,9 +51,14 @@ export default function CandidateJobsPage() {
             {data ? `${data.totalElements} jobs found` : "Search across every published job"}
           </p>
         </div>
-        <Link to={ROUTES.CANDIDATE_SAVED_JOBS} className={buttonVariants({ variant: "outline" })}>
-          <Bookmark className="h-4 w-4" /> Saved Jobs
-        </Link>
+        <div className="flex gap-2">
+          <Link to={ROUTES.CANDIDATE_JOB_ALERTS} className={buttonVariants({ variant: "outline" })}>
+            <Bell className="h-4 w-4" /> Job Alerts
+          </Link>
+          <Link to={ROUTES.CANDIDATE_SAVED_JOBS} className={buttonVariants({ variant: "outline" })}>
+            <Bookmark className="h-4 w-4" /> Saved Jobs
+          </Link>
+        </div>
       </div>
 
       <div className="flex gap-3">

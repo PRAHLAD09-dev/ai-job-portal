@@ -129,3 +129,29 @@ export interface SavedJobResponse {
   job: JobSummaryResponse;
   savedAt: string;
 }
+
+export type JobAlertFrequency = "INSTANT" | "DAILY" | "WEEKLY";
+
+/** Mirrors JobAlertRequest exactly — POST/PUT /jobs/alerts. */
+export interface JobAlertRequest {
+  keyword: string | null;
+  categoryId: string | null;
+  jobType: JobType | null;
+  experienceLevel: ExperienceLevel | null;
+  workMode: WorkMode | null;
+  city: string | null;
+  frequency: JobAlertFrequency;
+}
+
+/** Mirrors JobAlertResponse exactly — candidate's saved search alerts. */
+export interface JobAlertResponse {
+  id: string;
+  keyword: string | null;
+  categoryId: string | null;
+  jobType: JobType | null;
+  experienceLevel: ExperienceLevel | null;
+  workMode: WorkMode | null;
+  city: string | null;
+  frequency: JobAlertFrequency;
+  active: boolean;
+}

@@ -196,6 +196,33 @@ only, within that batch — no fabricated pages or fake filter options.
 **To unblock:** add pagination/filter query params to
 `RecommendationController`'s job-recommend endpoint.
 
+## 9. Job listings don't link to the company's public profile (Day 05)
+
+**Spec asked for:** A candidate-facing Company Public Profile page,
+reachable while browsing jobs.
+
+**Backend reality:** `job-service`'s `JobResponse` and `JobSummaryResponse`
+expose `companyId`, `companyName`, and `companyLogoUrl`, but never the
+company's `slug` — and `recruiter-service`'s public profile endpoint
+(`GET /companies/{slug}/public`) only accepts a slug, not a company ID.
+There is no public "get company by ID" endpoint either.
+
+**Frontend behavior:** `CompanyProfilePage` (`/candidate/companies/:slug`)
+is fully wired to the real `GET /companies/{slug}/public` endpoint and
+renders every field it returns (banner/logo, industry, size, founded
+year, website, verification status, locations, social links). It just
+isn't linked to yet from `JobDetailsPage`/`JobCard`, since neither job
+DTO carries the slug needed to build that link — adding one would mean
+guessing a slug client-side, which risks mismatching the backend's
+uniqueness-suffixed slugs. The page works correctly for any slug typed
+directly or shared as a link.
+
+**To unblock:** add `companySlug` to `JobResponse` and
+`JobSummaryResponse` in `job-service` (denormalized from
+`recruiter-service`, the same way `companyName`/`companyLogoUrl`
+already are), then link the company name/logo on `JobDetailsPage` and
+`JobCard` to `buildRoute.candidateCompanyProfile(job.companySlug)`.
+
 ---
 
 ## Resolved in the July 8, 2026 backend update
@@ -213,3 +240,29 @@ fully wired to real endpoints:
   `JobManagementController`
 - `SUPER_ADMIN` role support in `RoleName`, `RoleRoute`, and
   registration-role exclusion
+
+## Resolved in this pass (Day 05)
+
+- Job Alerts (create/edit/delete/list) — `job-service`
+  `JobAlertController` (`/jobs/alerts`), fully wired via
+  `features/jobs/services/job-alert.service.ts`,
+  `features/jobs/hooks/useJobAlerts.ts`, and `JobAlertsPage`
+  (linked from the "Job Alerts" button on the Find Jobs page).
+- Company Public Profile — `recruiter-service` `CompanyController`
+  (`GET /companies/{slug}/public`), fully wired via the new
+  `companyService.getPublicProfile` method,
+  `useCompanyPublicProfile` hook, and `CompanyProfilePage`
+  (`/candidate/companies/:slug`). See item 9 above for the one
+  remaining gap (no company slug on job DTOs to auto-link from).
+
+## Intentionally not implemented (Day 05 audit)
+
+**Admin Monitoring endpoints** (`admin-service`'s monitoring/audit
+surface beyond `DashboardResponse`) were left out of this pass.
+`GET /admin/dashboard` already aggregates every statistic the current
+Admin UI displays (user/company/job/application/AI/notification
+totals plus `recentActivity`), so a dedicated monitoring page isn't
+needed yet — building one now would mean shipping a screen with no
+UI purpose beyond re-displaying data `AdminDashboardPage` already
+shows. Revisit if a requirement emerges that `DashboardResponse`
+can't satisfy (e.g. live system health, per-service uptime).
