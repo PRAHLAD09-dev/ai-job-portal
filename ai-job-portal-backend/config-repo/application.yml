@@ -10,6 +10,17 @@
 spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    # Defaults keep local docker-compose Kafka (PLAINTEXT, no auth) working
+    # unchanged. To point this at a SASL-secured broker (e.g. Redpanda
+    # Cloud, Confluent Cloud), set these three env vars — nothing else
+    # needs to change:
+    #   KAFKA_SECURITY_PROTOCOL=SASL_SSL
+    #   KAFKA_SASL_MECHANISM=SCRAM-SHA-256
+    #   KAFKA_SASL_JAAS_CONFIG=org.apache.kafka.common.security.scram.ScramLoginModule required username="<user>" password="<pass>";
+    properties:
+      security.protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+      sasl.mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
+      sasl.jaas.config: ${KAFKA_SASL_JAAS_CONFIG:}
     consumer:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -33,11 +44,16 @@ spring:
 
   data:
     redis:
-      host: ${REDIS_HOST}
-      port: ${REDIS_PORT}
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      # Empty by default so local docker-compose Redis (no password) keeps
+      # working unchanged. Set REDIS_PASSWORD for a password-protected
+      # broker (e.g. Upstash Redis).
       password: ${REDIS_PASSWORD:}
       ssl:
-        enabled: ${REDIS_SSL:true}
+        # Local Redis has no TLS. Set REDIS_SSL_ENABLED=true for a TLS
+        # endpoint like Upstash Redis (its host/port always require TLS).
+        enabled: ${REDIS_SSL_ENABLED:false}
 
   jpa:
     open-in-view: false
@@ -56,7 +72,7 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
   instance:
-    prefer-ip-address: false
+    prefer-ip-address: true
 
 management:
   endpoints:
