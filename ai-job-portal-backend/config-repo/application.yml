@@ -12,15 +12,16 @@ spring:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     # Defaults keep local docker-compose Kafka (PLAINTEXT, no auth) working
     # unchanged. To point this at a SASL-secured broker (e.g. Redpanda
-    # Cloud, Confluent Cloud), set these three env vars — nothing else
+    # Cloud, Confluent Cloud), set these four env vars — nothing else
     # needs to change:
     #   KAFKA_SECURITY_PROTOCOL=SASL_SSL
     #   KAFKA_SASL_MECHANISM=SCRAM-SHA-256
-    #   KAFKA_SASL_JAAS_CONFIG=org.apache.kafka.common.security.scram.ScramLoginModule required username="<user>" password="<pass>";
+    #   KAFKA_USERNAME=<service-account-username>
+    #   KAFKA_PASSWORD=<service-account-password>
     properties:
       security.protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
       sasl.mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
-      sasl.jaas.config: ${KAFKA_SASL_JAAS_CONFIG:}
+      sasl.jaas.config: org.apache.kafka.common.security.scram.ScramLoginModule required username="${KAFKA_USERNAME:}" password="${KAFKA_PASSWORD:}";
     consumer:
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
