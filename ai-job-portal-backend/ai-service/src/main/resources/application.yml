@@ -16,7 +16,7 @@ eureka:
 # Local fallback values, used only if Config Server is unreachable at startup.
 # Authoritative values live in config-repo/ai-service.yml.
 server:
-  port: 8086
+  port: ${PORT:8086}
 
 management:
   endpoints:

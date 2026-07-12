@@ -16,7 +16,7 @@ eureka:
 # Local fallback values, used only if Config Server is unreachable at startup.
 # Authoritative values live in config-repo/admin-service.yml.
 server:
-  port: 8088
+  port: ${PORT:8088}
 
 management:
   endpoints:
