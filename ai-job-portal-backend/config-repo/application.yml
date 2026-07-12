@@ -73,7 +73,18 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
   instance:
-    prefer-ip-address: true
+    # Local docker-compose: all containers share one Docker network, so the
+    # container's own IP is directly reachable by every other service —
+    # prefer-ip-address:true (the default) works fine there.
+    # Railway (or any platform where each service is an isolated container/
+    # host): a service's internal container IP is NOT reachable from another
+    # service's container, so lb://SERVICE-NAME calls would hang trying to
+    # connect to an unreachable IP. Set EUREKA_PREFER_IP_ADDRESS=false on
+    # every Railway service to register with its Railway-private hostname
+    # (RAILWAY_PRIVATE_DOMAIN, auto-injected by Railway — nothing to set)
+    # instead, which IS reachable from other services in the same project.
+    prefer-ip-address: ${EUREKA_PREFER_IP_ADDRESS:true}
+    hostname: ${RAILWAY_PRIVATE_DOMAIN:localhost}
 
 management:
   endpoints:
