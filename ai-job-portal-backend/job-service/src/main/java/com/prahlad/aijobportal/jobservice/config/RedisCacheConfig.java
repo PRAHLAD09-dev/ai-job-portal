@@ -50,10 +50,24 @@ public class RedisCacheConfig {
         // object) instead of WRAPPER_ARRAY - use the explicit 3-arg overload to get
         // the same, collection-safe behavior on our custom ObjectMapper (needed here
         // for JavaTimeModule support).
+        //
+        // ALSO NOTE: every response DTO cached here (JobCategoryResponse,
+        // JobSummaryResponse, ...) is a Java record, and records are implicitly
+        // final. DefaultTyping.NON_FINAL deliberately omits the "@class" property
+        // for final classes (the assumption being the declared field type is
+        // concrete enough to not need it) - but Spring Cache's read path resolves
+        // the target type generically (List<T>'s <T> is erased at runtime), so
+        // without an embedded "@class" per element, Jackson can only reconstruct
+        // each element as a plain LinkedHashMap, not the original record. That
+        // then blows up as a ClassCastException the moment calling code casts the
+        // cached list's elements back to the record type - surfacing as a 500 on
+        // literally the first request to hit any of these caches. EVERYTHING
+        // (rather than NON_FINAL) also stamps final classes/records, so they come
+        // back as the correct type.
         ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
-                        ObjectMapper.DefaultTyping.NON_FINAL,
+                        ObjectMapper.DefaultTyping.EVERYTHING,
                         JsonTypeInfo.As.PROPERTY);
 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);

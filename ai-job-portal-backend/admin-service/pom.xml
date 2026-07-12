@@ -94,6 +94,19 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
+        <!-- Apache HttpClient5 as Feign's transport. Feign's default client
+             (JDK HttpURLConnection) cannot execute PATCH requests at all -
+             it throws "ProtocolException: Invalid HTTP method: PATCH" - and
+             admin-service's Feign clients (AuthServiceClient,
+             RecruiterServiceClient, JobServiceClient) are the only ones in
+             this codebase that issue PATCH (enable/disable users,
+             verify/reject/suspend companies, remove/restore/feature jobs).
+             Enabled via spring.cloud.openfeign.httpclient.hc5.enabled=true. -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-hc5</artifactId>
+        </dependency>
+
         <!-- Kafka (event publishing: UserDisabledEvent, CompanyVerifiedEvent,
              JobRemovedEvent) -->
         <dependency>

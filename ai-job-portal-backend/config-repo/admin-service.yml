@@ -21,6 +21,15 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  cloud:
+    openfeign:
+      httpclient:
+        # Feign's default client (JDK HttpURLConnection) cannot execute
+        # PATCH requests at all - switches to Apache HttpClient5 (feign-hc5
+        # dependency, added in admin-service's pom.xml), which supports it.
+        hc5:
+          enabled: true
+
 # ---- JWT ----
 # Must match the EXACT same secret/issuer configured on the Auth Service
 # (this service only verifies tokens, never issues them). No default

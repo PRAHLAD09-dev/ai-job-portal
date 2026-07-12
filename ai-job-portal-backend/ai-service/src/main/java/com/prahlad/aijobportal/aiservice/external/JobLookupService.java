@@ -4,6 +4,7 @@ import com.prahlad.aijobportal.aiservice.exception.DependencyServiceUnavailableE
 import com.prahlad.aijobportal.aiservice.feign.JobServiceClient;
 import com.prahlad.aijobportal.aiservice.feign.dto.JobDetailSummaryResponse;
 import com.prahlad.aijobportal.aiservice.feign.dto.JobLiteResponse;
+import com.prahlad.aijobportal.common.exception.BusinessException;
 import com.prahlad.aijobportal.common.response.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -37,6 +38,9 @@ public class JobLookupService {
 
     @SuppressWarnings("unused")
     private JobDetailSummaryResponse fetchJobFallback(UUID jobId, Throwable throwable) {
+        if (throwable instanceof BusinessException businessException) {
+            throw businessException;
+        }
         log.error("Job Service unreachable while fetching job {}", jobId, throwable);
         throw new DependencyServiceUnavailableException("Job Service is temporarily unavailable. Please try again later.");
     }

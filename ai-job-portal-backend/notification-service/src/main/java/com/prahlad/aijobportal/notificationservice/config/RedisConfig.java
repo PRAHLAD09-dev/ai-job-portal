@@ -26,7 +26,7 @@ public class RedisConfig {
         ObjectMapper objectMapper = new ObjectMapper()
                 .registerModule(new JavaTimeModule())
                 .activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
-                        ObjectMapper.DefaultTyping.NON_FINAL);
+                        ObjectMapper.DefaultTyping.EVERYTHING);
 
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);

@@ -3,6 +3,7 @@ package com.prahlad.aijobportal.aiservice.external;
 import com.prahlad.aijobportal.aiservice.exception.DependencyServiceUnavailableException;
 import com.prahlad.aijobportal.aiservice.feign.CandidateServiceClient;
 import com.prahlad.aijobportal.aiservice.feign.dto.CandidateProfileSummaryResponse;
+import com.prahlad.aijobportal.common.exception.BusinessException;
 import com.prahlad.aijobportal.common.response.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -26,6 +27,9 @@ public class CandidateLookupService {
 
     @SuppressWarnings("unused")
     private CandidateProfileSummaryResponse fetchCurrentCandidateFallback(String bearerToken, Throwable throwable) {
+        if (throwable instanceof BusinessException businessException) {
+            throw businessException;
+        }
         log.error("Candidate Service unreachable", throwable);
         throw new DependencyServiceUnavailableException("Candidate Service is temporarily unavailable. Please try again later.");
     }

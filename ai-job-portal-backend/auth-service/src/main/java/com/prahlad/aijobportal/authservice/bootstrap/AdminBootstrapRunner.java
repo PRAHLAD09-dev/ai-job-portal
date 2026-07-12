@@ -8,8 +8,10 @@ import com.prahlad.aijobportal.authservice.user.repository.RoleRepository;
 import com.prahlad.aijobportal.authservice.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -62,6 +64,25 @@ public class AdminBootstrapRunner implements ApplicationRunner {
     private final PasswordEncoder passwordEncoder;
     private final AdminBootstrapProperties properties;
 
+    // Self-injected proxy, resolved lazily to avoid a circular-dependency
+    // error at startup. run() below calls bootstrapAdminIfMissing() through
+    // THIS field rather than through 'this' — Spring's @Transactional advice
+    // only fires on calls that pass through the bean's proxy, and a call
+    // from one method to another on 'this' within the same class instance
+    // bypasses that proxy entirely (well-known Spring AOP self-invocation
+    // limitation). Without this, bootstrapAdminIfMissing() silently runs
+    // with no surrounding transaction: roleRepository.findByName(...) opens
+    // and commits its own short-lived transaction and returns a Role that
+    // is then DETACHED by the time userRepository.save(admin) cascades to
+    // persist it, which Hibernate rejects with "detached entity passed to
+    // persist". Routing through the proxy keeps both calls in the one
+    // @Transactional persistence context, exactly like the normal
+    // POST /auth/register path (called externally, through the proxy, so
+    // it was never affected by this).
+    @Autowired
+    @Lazy
+    private AdminBootstrapRunner self;
+
     @Override
     public void run(ApplicationArguments args) {
         if (!properties.isEnabled()) {
@@ -77,7 +98,7 @@ public class AdminBootstrapRunner implements ApplicationRunner {
         }
 
         try {
-            bootstrapAdminIfMissing();
+            self.bootstrapAdminIfMissing();
         } catch (DataIntegrityViolationException e) {
             // Another instance/replica won the race and created the admin
             // (or the email) concurrently during startup. That's fine - the

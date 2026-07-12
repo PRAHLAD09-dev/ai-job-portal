@@ -50,6 +50,17 @@ RUN apk add --no-cache wget
 
 COPY --from=build /workspace/config-server/target/*.jar app.jar
 
+# Bake config-repo into the image itself. On docker-compose (VPS) this is
+# redundant with the ./config-repo:/config-repo volume mount in
+# docker-compose.yml (the mount just overlays these baked-in files with
+# the live host copy — handy for editing config without a rebuild). On
+# platforms with no host-volume-mount equivalent (Render, ECS, Cloud Run,
+# etc.) there is no mount to fall back on, so this COPY is what actually
+# makes config-server serve real config there. CONFIG_REPO_PATH defaults
+# to ./config-repo (see config-server's application.yml), which resolves
+# to /app/config-repo given WORKDIR /app.
+COPY config-repo /app/config-repo
+
 EXPOSE 8888
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

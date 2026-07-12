@@ -3,6 +3,7 @@ package com.prahlad.aijobportal.jobservice.job.service;
 import com.prahlad.aijobportal.jobservice.feign.RecruiterServiceClient;
 import com.prahlad.aijobportal.jobservice.feign.dto.RecruiterSummaryResponse;
 import com.prahlad.aijobportal.jobservice.job.exception.AuthServiceUnavailableException;
+import com.prahlad.aijobportal.common.exception.BusinessException;
 import com.prahlad.aijobportal.common.response.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -34,6 +35,16 @@ public class RecruiterLookupService {
 
     @SuppressWarnings("unused")
     private RecruiterSummaryResponse fetchCurrentRecruiterFallback(String bearerToken, Throwable throwable) {
+        // fallbackMethod fires for EVERY exception the guarded call throws,
+        // including ones listed in resilience4j's ignoreExceptions — that
+        // config only excludes an exception from the failure-rate/open-state
+        // calculation, it does not skip the fallback. A 404 "this recruiter
+        // hasn't finished onboarding yet" is a legitimate business outcome,
+        // not Recruiter Service being down, so it must be rethrown as-is
+        // rather than masked as a fake 503.
+        if (throwable instanceof BusinessException businessException) {
+            throw businessException;
+        }
         log.error("Recruiter Service unreachable while fetching current recruiter", throwable);
         throw new AuthServiceUnavailableException("Recruiter Service is temporarily unavailable. Please try again later.");
     }

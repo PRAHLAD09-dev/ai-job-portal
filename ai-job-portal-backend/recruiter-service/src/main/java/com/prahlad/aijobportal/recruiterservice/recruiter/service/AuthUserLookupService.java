@@ -3,6 +3,7 @@ package com.prahlad.aijobportal.recruiterservice.recruiter.service;
 import com.prahlad.aijobportal.recruiterservice.feign.AuthServiceClient;
 import com.prahlad.aijobportal.recruiterservice.feign.dto.UserSummaryResponse;
 import com.prahlad.aijobportal.recruiterservice.recruiter.exception.AuthServiceUnavailableException;
+import com.prahlad.aijobportal.common.exception.BusinessException;
 import com.prahlad.aijobportal.common.response.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
@@ -34,6 +35,9 @@ public class AuthUserLookupService {
 
     @SuppressWarnings("unused")
     private UserSummaryResponse fetchCurrentUserFallback(String bearerToken, Throwable throwable) {
+        if (throwable instanceof BusinessException businessException) {
+            throw businessException;
+        }
         log.error("Auth Service unreachable while fetching current user", throwable);
         throw new AuthServiceUnavailableException("Auth Service is temporarily unavailable. Please try again later.");
     }

@@ -3,6 +3,7 @@ package com.prahlad.aijobportal.aiservice.external;
 import com.prahlad.aijobportal.aiservice.exception.DependencyServiceUnavailableException;
 import com.prahlad.aijobportal.aiservice.feign.ApplicationServiceClient;
 import com.prahlad.aijobportal.aiservice.feign.dto.ApplicationSummaryResponse;
+import com.prahlad.aijobportal.common.exception.BusinessException;
 import com.prahlad.aijobportal.common.response.ApiResponse;
 import com.prahlad.aijobportal.common.response.PageResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -32,6 +33,9 @@ public class ApplicationLookupService {
 
     @SuppressWarnings("unused")
     private List<ApplicationSummaryResponse> fetchApplicationsForJobFallback(String bearerToken, UUID jobId, Throwable throwable) {
+        if (throwable instanceof BusinessException businessException) {
+            throw businessException;
+        }
         log.error("Application Service unreachable while fetching applications for job {}", jobId, throwable);
         throw new DependencyServiceUnavailableException("Application Service is temporarily unavailable. Please try again later.");
     }
