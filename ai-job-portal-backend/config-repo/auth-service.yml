@@ -7,7 +7,7 @@
 # project's .env file via docker-compose) — never hardcoded here.
 
 server:
-  port: 8081
+  port: ${PORT:8081}
 
 spring:
   datasource:

@@ -7,7 +7,7 @@
 # exclusively from environment variables — never hardcoded here.
 
 server:
-  port: 8085
+  port: ${PORT:8085}
 
 spring:
   datasource:
