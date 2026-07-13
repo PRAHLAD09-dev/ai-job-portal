@@ -105,3 +105,32 @@ resilience4j:
         baseConfig: default
       notificationService:
         baseConfig: default
+
+# ---- Cross-platform Feign target overrides ----
+# admin-service is a Feign *client* to six other services (auth, job,
+# recruiter, application, ai, notification). Normally it reaches them via
+# Eureka load-balancing (lb://SERVICE-NAME), which resolves to each
+# service's registered hostname. If every service is on the same platform
+# (e.g. all on Railway, registered via RAILWAY_PRIVATE_DOMAIN), that works
+# fine. But if admin-service itself is deployed on a DIFFERENT platform
+# (e.g. Render), it cannot resolve another platform's private/internal
+# hostname at all — every downstream call fails immediately.
+#
+# Leave these blank (default) when admin-service is on the same platform
+# as the other services. Set them to each service's public URL (its
+# https://xxx.up.railway.app address) when admin-service is deployed
+# elsewhere — this makes the Feign client call that fixed public URL
+# directly, bypassing Eureka load-balancing for that client only.
+services:
+  auth-service:
+    url: ${AUTH_SERVICE_URL:}
+  job-service:
+    url: ${JOB_SERVICE_URL:}
+  recruiter-service:
+    url: ${RECRUITER_SERVICE_URL:}
+  application-service:
+    url: ${APPLICATION_SERVICE_URL:}
+  ai-service:
+    url: ${AI_SERVICE_URL:}
+  notification-service:
+    url: ${NOTIFICATION_SERVICE_URL:}

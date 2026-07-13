@@ -21,7 +21,7 @@ import java.util.UUID;
  * features (DAY09_ADMIN_SERVICE.md); never duplicates Job Service's own
  * business logic.
  */
-@FeignClient(name = "JOB-SERVICE", path = CommonConstants.API_BASE_PATH + "/jobs/internal/admin", configuration = FeignClientConfig.class)
+@FeignClient(name = "JOB-SERVICE", url = "${services.job-service.url:}", path = CommonConstants.API_BASE_PATH + "/jobs/internal/admin", configuration = FeignClientConfig.class)
 public interface JobServiceClient {
 
     @GetMapping("/jobs")

@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  * interceptor. Used exclusively to back Admin Service's Notification
  * Monitoring feature (DAY09_ADMIN_SERVICE.md); read-only.
  */
-@FeignClient(name = "NOTIFICATION-SERVICE", path = CommonConstants.API_BASE_PATH + "/notifications/internal/admin", configuration = FeignClientConfig.class)
+@FeignClient(name = "NOTIFICATION-SERVICE", url = "${services.notification-service.url:}", path = CommonConstants.API_BASE_PATH + "/notifications/internal/admin", configuration = FeignClientConfig.class)
 public interface NotificationServiceClient {
 
     @GetMapping("/statistics")

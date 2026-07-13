@@ -21,7 +21,7 @@ import java.util.UUID;
  * features (DAY09_ADMIN_SERVICE.md); never duplicates Recruiter
  * Service's own business logic.
  */
-@FeignClient(name = "RECRUITER-SERVICE", path = CommonConstants.API_BASE_PATH + "/companies/internal/admin", configuration = FeignClientConfig.class)
+@FeignClient(name = "RECRUITER-SERVICE", url = "${services.recruiter-service.url:}", path = CommonConstants.API_BASE_PATH + "/companies/internal/admin", configuration = FeignClientConfig.class)
 public interface RecruiterServiceClient {
 
     @GetMapping("/companies")

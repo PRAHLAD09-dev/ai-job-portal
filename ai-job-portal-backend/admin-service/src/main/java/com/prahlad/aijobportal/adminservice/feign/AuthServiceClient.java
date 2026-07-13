@@ -24,7 +24,7 @@ import java.util.UUID;
  * (DAY09_ADMIN_SERVICE.md); never duplicates Auth Service's own
  * registration/login business logic.
  */
-@FeignClient(name = "AUTH-SERVICE", path = CommonConstants.API_BASE_PATH + "/auth/internal/admin/users", configuration = FeignClientConfig.class)
+@FeignClient(name = "AUTH-SERVICE", url = "${services.auth-service.url:}", path = CommonConstants.API_BASE_PATH + "/auth/internal/admin/users", configuration = FeignClientConfig.class)
 public interface AuthServiceClient {
 
     @GetMapping

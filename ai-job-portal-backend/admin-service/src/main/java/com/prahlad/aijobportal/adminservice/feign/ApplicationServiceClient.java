@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
  * interceptor. Used exclusively to back Admin Service's Application
  * Monitoring feature (DAY09_ADMIN_SERVICE.md); read-only.
  */
-@FeignClient(name = "APPLICATION-SERVICE", path = CommonConstants.API_BASE_PATH + "/applications/internal/admin", configuration = FeignClientConfig.class)
+@FeignClient(name = "APPLICATION-SERVICE", url = "${services.application-service.url:}", path = CommonConstants.API_BASE_PATH + "/applications/internal/admin", configuration = FeignClientConfig.class)
 public interface ApplicationServiceClient {
 
     @GetMapping("/statistics")
