@@ -267,7 +267,11 @@ public class AuthServiceImpl implements AuthService {
             passwordResetTokenRepository.save(token);
 
             String resetLink = authProperties.getFrontendResetPasswordUrl() + "?token=" + rawToken;
-            emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), resetLink);
+            try {
+                emailService.sendPasswordResetEmail(user.getEmail(), user.getFirstName(), resetLink);
+            } catch (Exception e) {
+                log.warn("Failed to send password reset email to {}: {}", user.getEmail(), e.getMessage());
+            }
 
             authEventPublisher.publishPasswordResetRequested(new PasswordResetRequestedEvent(
                     user.getId(), user.getEmail(), user.getFirstName(), Instant.now()
@@ -345,7 +349,15 @@ public class AuthServiceImpl implements AuthService {
         emailVerificationTokenRepository.save(token);
 
         String verificationLink = authProperties.getFrontendVerifyEmailUrl() + "?token=" + rawToken;
-        emailService.sendEmailVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
+        try {
+            emailService.sendEmailVerificationEmail(user.getEmail(), user.getFirstName(), verificationLink);
+        } catch (Exception e) {
+            // Don't let a mail-server outage/block (e.g. a hosting provider
+            // blocking outbound SMTP) fail the whole request — the token is
+            // already saved, so the user can still request a fresh link once
+            // email delivery is working.
+            log.warn("Failed to send verification email to {}: {}", user.getEmail(), e.getMessage());
+        }
     }
 
     private AuthResponse issueAuthResponse(User user) {
