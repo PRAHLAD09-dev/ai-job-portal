@@ -11,7 +11,16 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
   instance:
-    prefer-ip-address: true
+    # Authoritative Eureka registration behavior lives in
+    # config-repo/application.yml. This local block is only a fallback used
+    # if the Config Server is unreachable at startup, kept in sync with the
+    # same field names/defaults so it can never silently diverge (e.g. by
+    # still hardcoding a Railway-private-domain-only setup).
+    prefer-ip-address: ${EUREKA_PREFER_IP_ADDRESS:true}
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
+    non-secure-port-enabled: ${EUREKA_NON_SECURE_PORT_ENABLED:true}
+    secure-port-enabled: ${EUREKA_SECURE_PORT_ENABLED:false}
+    secure-port: ${EUREKA_SECURE_PORT:443}
 
 # Local fallback values, used only if Config Server is unreachable at startup.
 # Authoritative values live in config-repo/auth-service.yml.

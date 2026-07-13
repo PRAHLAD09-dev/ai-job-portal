@@ -76,15 +76,36 @@ eureka:
     # Local docker-compose: all containers share one Docker network, so the
     # container's own IP is directly reachable by every other service —
     # prefer-ip-address:true (the default) works fine there.
-    # Railway (or any platform where each service is an isolated container/
-    # host): a service's internal container IP is NOT reachable from another
-    # service's container, so lb://SERVICE-NAME calls would hang trying to
-    # connect to an unreachable IP. Set EUREKA_PREFER_IP_ADDRESS=false on
-    # every Railway service to register with its Railway-private hostname
-    # (RAILWAY_PRIVATE_DOMAIN, auto-injected by Railway — nothing to set)
-    # instead, which IS reachable from other services in the same project.
+    #
+    # Deployed (Railway or Render, across multiple isolated projects/
+    # platforms): a service's private/internal hostname (e.g. Railway's
+    # *.railway.internal) is only resolvable from WITHIN that same
+    # Railway project's private network — it NXDOMAINs for every service
+    # in a different Railway project, and for Render entirely. Since this
+    # deployment intentionally spans two Railway projects plus Render,
+    # there is no shared private network to advertise a hostname on, so
+    # every deployed service must instead register its PUBLIC domain
+    # (Railway's auto-injected RAILWAY_PUBLIC_DOMAIN, or Render's
+    # RENDER_EXTERNAL_HOSTNAME) via EUREKA_INSTANCE_HOSTNAME, which every
+    # other service — regardless of which project/platform it's on — can
+    # always reach.
+    #
+    # Set on every deployed service:
+    #   EUREKA_PREFER_IP_ADDRESS=false
+    #   EUREKA_INSTANCE_HOSTNAME=${{RAILWAY_PUBLIC_DOMAIN}}   (Railway)
+    #   EUREKA_INSTANCE_HOSTNAME=${RENDER_EXTERNAL_HOSTNAME}  (Render)
     prefer-ip-address: ${EUREKA_PREFER_IP_ADDRESS:true}
-    hostname: ${RAILWAY_PRIVATE_DOMAIN:localhost}
+    hostname: ${EUREKA_INSTANCE_HOSTNAME:localhost}
+    # Public Railway/Render domains only accept HTTPS on 443 (TLS-terminated
+    # at their edge, plain HTTP is rejected/redirected) — so once a service
+    # registers a public hostname, Eureka must also advertise it as secure
+    # so every lb://SERVICE-NAME caller (Gateway's WebClient, Feign's
+    # LoadBalancer) builds an https:// URI instead of http://, and the
+    # homePageUrl/statusPageUrl/healthCheckUrl Eureka derives use the right
+    # scheme and port too. Locally, both flags keep the plain-HTTP default.
+    non-secure-port-enabled: ${EUREKA_NON_SECURE_PORT_ENABLED:true}
+    secure-port-enabled: ${EUREKA_SECURE_PORT_ENABLED:false}
+    secure-port: ${EUREKA_SECURE_PORT:443}
 
 management:
   endpoints:
