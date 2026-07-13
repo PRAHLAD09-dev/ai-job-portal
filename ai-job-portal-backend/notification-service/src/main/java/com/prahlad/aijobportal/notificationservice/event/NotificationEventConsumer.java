@@ -19,6 +19,7 @@ import com.prahlad.aijobportal.notificationservice.notification.enums.Notificati
 import com.prahlad.aijobportal.notificationservice.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -37,12 +38,26 @@ import org.springframework.stereotype.Component;
  * Two events described in DAY08 do not map to a distinct Kafka topic in
  * the existing codebase and are intentionally not separately consumed
  * here:
- *  - "Email Verification": Auth Service sends this transactional e-mail
- *    itself (SmtpEmailService), by design, since only Auth Service holds
- *    the verification token.
- *  - "Interview Scheduled" / "Offer Released": these are
- *    ApplicationStatus values (INTERVIEW, OFFERED), not separate topics —
- *    both are handled inside handleApplicationStatusChanged below.
+ * - "Email Verification": Auth Service sends this transactional e-mail
+ * itself (SmtpEmailService), by design, since only Auth Service holds
+ * the verification token.
+ * - "Interview Scheduled" / "Offer Released": these are
+ * ApplicationStatus values (INTERVIEW, OFFERED), not separate topics —
+ * both are handled inside handleApplicationStatusChanged below.
+ *
+ * All 11 topics are consumed by a SINGLE {@code @KafkaListener} bound to
+ * one consumer instance in "notification-service-group", dispatching by
+ * {@code record.topic()} to the per-event handler below. Previously each
+ * event had its OWN {@code @KafkaListener} method under the same
+ * groupId, which made Spring Kafka spin up 11 separate consumer
+ * instances all joining the same group — every one of those 11 joins at
+ * startup triggers a full group rebalance for every existing member,
+ * producing a rebalance storm and a burst of INFO-level Kafka client
+ * logs large enough to trip hosting-platform log-rate limits (observed:
+ * Railway silently dropping subsequent log lines, including any
+ * unrelated error logs emitted in that same window). Since every topic
+ * here has exactly 1 partition, a single consumer has more than enough
+ * throughput for all of them — no concurrency setting needed.
  */
 @Component
 @RequiredArgsConstructor
@@ -53,8 +68,38 @@ public class NotificationEventConsumer {
     private final EmailTemplateBuilder emailTemplateBuilder;
     private final ObjectMapper objectMapper;
 
-    @KafkaListener(topics = "user-registered", groupId = "notification-service-group")
-    public void handleUserRegistered(String payload) {
+    @KafkaListener(topics = {
+            "user-registered",
+            "password-reset-requested",
+            "application-created",
+            "application-status-changed",
+            "candidate-shortlisted",
+            "candidate-rejected",
+            "candidate-hired",
+            "job-created",
+            "job-updated",
+            "resume-analyzed",
+            "recommendation-generated"
+    }, groupId = "notification-service-group")
+    public void onEvent(ConsumerRecord<String, String> record) {
+        String payload = record.value();
+        switch (record.topic()) {
+            case "user-registered" -> handleUserRegistered(payload);
+            case "password-reset-requested" -> handlePasswordResetRequested(payload);
+            case "application-created" -> handleApplicationCreated(payload);
+            case "application-status-changed" -> handleApplicationStatusChanged(payload);
+            case "candidate-shortlisted" -> handleCandidateShortlisted(payload);
+            case "candidate-rejected" -> handleCandidateRejected(payload);
+            case "candidate-hired" -> handleCandidateHired(payload);
+            case "job-created" -> handleJobCreated(payload);
+            case "job-updated" -> handleJobUpdated(payload);
+            case "resume-analyzed" -> handleResumeAnalyzed(payload);
+            case "recommendation-generated" -> handleRecommendationGenerated(payload);
+            default -> log.warn("Received event on unrecognized topic [{}]; ignoring", record.topic());
+        }
+    }
+
+    private void handleUserRegistered(String payload) {
         try {
             UserRegisteredEvent event = objectMapper.readValue(payload, UserRegisteredEvent.class);
             String title = "Welcome to AI Job Portal";
@@ -67,8 +112,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "password-reset-requested", groupId = "notification-service-group")
-    public void handlePasswordResetRequested(String payload) {
+    private void handlePasswordResetRequested(String payload) {
         try {
             PasswordResetRequestedEvent event = objectMapper.readValue(payload, PasswordResetRequestedEvent.class);
             String title = "Password reset requested";
@@ -81,8 +125,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "application-created", groupId = "notification-service-group")
-    public void handleApplicationCreated(String payload) {
+    private void handleApplicationCreated(String payload) {
         try {
             ApplicationCreatedEvent event = objectMapper.readValue(payload, ApplicationCreatedEvent.class);
             String title = "Application submitted";
@@ -95,8 +138,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "application-status-changed", groupId = "notification-service-group")
-    public void handleApplicationStatusChanged(String payload) {
+    private void handleApplicationStatusChanged(String payload) {
         try {
             ApplicationStatusChangedEvent event = objectMapper.readValue(payload, ApplicationStatusChangedEvent.class);
             ApplicationStatus newStatus = event.newStatus();
@@ -122,8 +164,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "candidate-shortlisted", groupId = "notification-service-group")
-    public void handleCandidateShortlisted(String payload) {
+    private void handleCandidateShortlisted(String payload) {
         try {
             CandidateShortlistedEvent event = objectMapper.readValue(payload, CandidateShortlistedEvent.class);
             String title = "You have been shortlisted";
@@ -136,8 +177,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "candidate-rejected", groupId = "notification-service-group")
-    public void handleCandidateRejected(String payload) {
+    private void handleCandidateRejected(String payload) {
         try {
             CandidateRejectedEvent event = objectMapper.readValue(payload, CandidateRejectedEvent.class);
             String title = "Application update";
@@ -150,8 +190,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "candidate-hired", groupId = "notification-service-group")
-    public void handleCandidateHired(String payload) {
+    private void handleCandidateHired(String payload) {
         try {
             CandidateHiredEvent event = objectMapper.readValue(payload, CandidateHiredEvent.class);
             String title = "Congratulations, you are hired!";
@@ -164,8 +203,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "job-created", groupId = "notification-service-group")
-    public void handleJobCreated(String payload) {
+    private void handleJobCreated(String payload) {
         try {
             JobCreatedEvent event = objectMapper.readValue(payload, JobCreatedEvent.class);
             String title = "Job posted successfully";
@@ -178,8 +216,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "job-updated", groupId = "notification-service-group")
-    public void handleJobUpdated(String payload) {
+    private void handleJobUpdated(String payload) {
         try {
             JobUpdatedEvent event = objectMapper.readValue(payload, JobUpdatedEvent.class);
             // JobUpdatedEvent does not carry recruiterUserId (only companyId); without a
@@ -191,8 +228,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "resume-analyzed", groupId = "notification-service-group")
-    public void handleResumeAnalyzed(String payload) {
+    private void handleResumeAnalyzed(String payload) {
         try {
             ResumeAnalyzedEvent event = objectMapper.readValue(payload, ResumeAnalyzedEvent.class);
             String title = "Your AI resume analysis is ready";
@@ -205,8 +241,7 @@ public class NotificationEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "recommendation-generated", groupId = "notification-service-group")
-    public void handleRecommendationGenerated(String payload) {
+    private void handleRecommendationGenerated(String payload) {
         try {
             RecommendationGeneratedEvent event = objectMapper.readValue(payload, RecommendationGeneratedEvent.class);
             String title = "New AI job recommendations";
