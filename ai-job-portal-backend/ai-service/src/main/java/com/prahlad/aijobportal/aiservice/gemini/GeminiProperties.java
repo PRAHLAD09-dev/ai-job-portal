@@ -20,5 +20,14 @@ public class GeminiProperties {
 
     private double temperature = 0.4;
 
-    private int maxOutputTokens = 2048;
+    /**
+     * 2048 was enough for the original, smaller response schemas. It
+     * is not enough headroom for DAY10_AI_Enhancement_ATS_Intelligence.md's
+     * richer ones (skill gap priority order + learning suggestions,
+     * resume analysis extraction fields) - responses were observed
+     * getting cut off mid-JSON at that limit. 8192 leaves comfortable
+     * margin for the largest current schema (resume analysis) plus
+     * future growth.
+     */
+    private int maxOutputTokens = 8192;
 }

@@ -66,7 +66,7 @@ class InterviewQuestionServiceImplTest {
                 .thenReturn(new RecruiterSummaryResponse(UUID.randomUUID(), recruiterUserId, "r@x.com", "Recruiter", recruiterCompanyId, "MyCo"));
         when(jobLookupService.fetchJob(jobId))
                 .thenReturn(new JobDetailSummaryResponse(jobId, jobCompanyId, "OtherCo", "Backend Engineer",
-                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", Instant.now(), List.of()));
+                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", null, null, null, null, Instant.now(), List.of(), List.of(), List.of()));
 
         GenerateInterviewQuestionsRequest request = new GenerateInterviewQuestionsRequest(jobId, 5);
 
@@ -82,7 +82,7 @@ class InterviewQuestionServiceImplTest {
                 .thenReturn(new RecruiterSummaryResponse(UUID.randomUUID(), recruiterUserId, "r@x.com", "Recruiter", companyId, "MyCo"));
         when(jobLookupService.fetchJob(jobId))
                 .thenReturn(new JobDetailSummaryResponse(jobId, companyId, "MyCo", "Backend Engineer",
-                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", Instant.now(), List.of()));
+                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", null, null, null, null, Instant.now(), List.of(), List.of(), List.of()));
 
         InterviewQuestionAiResult aiResult = new InterviewQuestionAiResult(List.of(
                 new InterviewQuestionAiResult.Item("Explain the SOLID principles.", "MEDIUM", "TECHNICAL")));
@@ -111,7 +111,7 @@ class InterviewQuestionServiceImplTest {
                 .thenReturn(new RecruiterSummaryResponse(UUID.randomUUID(), recruiterUserId, "r@x.com", "Recruiter", companyId, "MyCo"));
         when(jobLookupService.fetchJob(jobId))
                 .thenReturn(new JobDetailSummaryResponse(jobId, companyId, "MyCo", "Backend Engineer",
-                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", Instant.now(), List.of()));
+                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", null, null, null, null, Instant.now(), List.of(), List.of(), List.of()));
 
         InterviewQuestionAiResult aiResult = new InterviewQuestionAiResult(List.of(
                 new InterviewQuestionAiResult.Item("Explain X.", "IMPOSSIBLE", "TECHNICAL")));

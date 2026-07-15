@@ -27,4 +27,25 @@ public class WebClientConfig {
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(2 * 1024 * 1024))
                 .build();
     }
+
+    /**
+     * WebClient used exclusively by {@code ResumeTextExtractionServiceImpl}
+     * to download a candidate's resume file from its Cloudinary URL before
+     * running it through PDFBox. The in-memory buffer cap here (12 MB, a
+     * margin above {@code app.resume-extraction.max-file-size-bytes}'s
+     * default 10 MB) is what actually stops an oversized/runaway download —
+     * once the response body exceeds it, WebClient fails the request with a
+     * {@code DataBufferLimitException} rather than buffering an unbounded
+     * file into memory.
+     */
+    @Bean
+    public WebClient resumeFileWebClient() {
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofSeconds(15));
+
+        return WebClient.builder()
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(12 * 1024 * 1024))
+                .build();
+    }
 }

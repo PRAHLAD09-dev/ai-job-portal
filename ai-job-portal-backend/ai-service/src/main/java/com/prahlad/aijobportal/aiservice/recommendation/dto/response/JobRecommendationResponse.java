@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.aiservice.recommendation.dto.response;
 
+import java.util.List;
 import java.util.UUID;
 
 public record JobRecommendationResponse(
@@ -7,6 +8,7 @@ public record JobRecommendationResponse(
         String jobTitle,
         String companyName,
         int matchScore,
-        String reasoning
+        MatchBreakdownResponse matchBreakdown,
+        List<String> reasoning
 ) {
 }

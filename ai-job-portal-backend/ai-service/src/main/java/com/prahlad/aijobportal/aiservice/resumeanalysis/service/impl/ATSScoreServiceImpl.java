@@ -5,13 +5,17 @@ import com.prahlad.aijobportal.aiservice.gemini.UntrustedTextGuard;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.request.AnalyzeResumeRequest;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.response.ATSScoreResponse;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.service.ATSScoreService;
+import com.prahlad.aijobportal.aiservice.resumeanalysis.service.ResumeTextExtractionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
  * Fast, unpersisted ATS compatibility check — {@code POST /api/v1/ai/resume/score}.
  * Deliberately does not persist or publish events; that is the fuller
- * {@code ResumeAnalysisService.analyze} flow's responsibility.
+ * {@code ResumeAnalysisService.analyze} flow's responsibility. Like
+ * {@code analyze}, resume text is extracted server-side from the PDF
+ * at {@code request.resumeUrl()} via {@link ResumeTextExtractionService}
+ * rather than supplied by the frontend.
  */
 @Service
 @RequiredArgsConstructor
@@ -33,12 +37,15 @@ public class ATSScoreServiceImpl implements ATSScoreService {
             """;
 
     private final AiStructuredResponseService aiStructuredResponseService;
+    private final ResumeTextExtractionService resumeTextExtractionService;
 
     @Override
     public ATSScoreResponse score(AnalyzeResumeRequest request) {
+        String resumeText = resumeTextExtractionService.extractText(request.resumeUrl());
+
         ATSScoreResponse result = aiStructuredResponseService.generateStructured(
                 PROMPT_TEMPLATE.formatted(UntrustedTextGuard.INSTRUCTION,
-                        UntrustedTextGuard.wrap("RESUME", request.resumeText())),
+                        UntrustedTextGuard.wrap("RESUME", resumeText)),
                 ATSScoreResponse.class);
 
         int clampedScore = Math.max(0, Math.min(100, result.atsScore()));

@@ -21,6 +21,13 @@ import java.util.UUID;
  * (candidateId, jobId) pair; regenerating recommendations replaces
  * the candidate's prior rows for jobs no longer recommended and
  * upserts the rest (see {@code RecommendationServiceImpl}).
+ *
+ * <p>DAY10 (AI Enhancement & ATS Intelligence): {@code matchScore} is
+ * now backed by six persisted dimension scores (Explainable AI /
+ * "AI Job Match %"), and {@code reasoning} stores the AI's explainable
+ * bullet points as a newline-delimited TEXT column — same convention
+ * used by {@code ResumeAnalysis}'s list-typed fields — rather than a
+ * single freeform sentence.
  */
 @Entity
 @Table(name = "job_recommendations",
@@ -43,6 +50,25 @@ public class JobRecommendation extends BaseEntity {
     @Column(name = "match_score", nullable = false)
     private Integer matchScore;
 
+    @Column(name = "skill_match", nullable = false)
+    private Integer skillMatch;
+
+    @Column(name = "experience_match", nullable = false)
+    private Integer experienceMatch;
+
+    @Column(name = "education_match", nullable = false)
+    private Integer educationMatch;
+
+    @Column(name = "project_match", nullable = false)
+    private Integer projectMatch;
+
+    @Column(name = "salary_match", nullable = false)
+    private Integer salaryMatch;
+
+    @Column(name = "location_match", nullable = false)
+    private Integer locationMatch;
+
+    /** Newline-delimited explainable reasoning bullets (see class Javadoc). */
     @Column(name = "reasoning", columnDefinition = "TEXT")
     private String reasoning;
 }

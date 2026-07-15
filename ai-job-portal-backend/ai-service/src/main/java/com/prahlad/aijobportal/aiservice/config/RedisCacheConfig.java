@@ -32,6 +32,7 @@ public class RedisCacheConfig {
     public static final String CANDIDATE_RECOMMENDATIONS_CACHE = "candidateRecommendations";
     public static final String POPULAR_SKILLS_CACHE = "popularSkills";
     public static final String INTERVIEW_QUESTIONS_CACHE = "interviewQuestions";
+    public static final String LEARNING_ROADMAP_CACHE = "learningRoadmap";
 
     @Bean
     public RedisCacheManager cacheManager(RedisConnectionFactory connectionFactory) {
@@ -63,7 +64,8 @@ public class RedisCacheConfig {
                 JOB_RECOMMENDATIONS_CACHE, defaultConfig.entryTtl(Duration.ofHours(2)),
                 CANDIDATE_RECOMMENDATIONS_CACHE, defaultConfig.entryTtl(Duration.ofHours(2)),
                 POPULAR_SKILLS_CACHE, defaultConfig.entryTtl(Duration.ofHours(12)),
-                INTERVIEW_QUESTIONS_CACHE, defaultConfig.entryTtl(Duration.ofHours(6))
+                INTERVIEW_QUESTIONS_CACHE, defaultConfig.entryTtl(Duration.ofHours(6)),
+                LEARNING_ROADMAP_CACHE, defaultConfig.entryTtl(Duration.ofHours(6))
         );
 
         return RedisCacheManager.builder(connectionFactory)

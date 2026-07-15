@@ -14,6 +14,7 @@ import com.prahlad.aijobportal.aiservice.resumeanalysis.entity.ResumeAnalysis;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.mapper.ResumeAnalysisMapper;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.repository.ResumeAnalysisRepository;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.service.ResumeAnalysisService;
+import com.prahlad.aijobportal.aiservice.resumeanalysis.service.ResumeTextExtractionService;
 import com.prahlad.aijobportal.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,13 +28,20 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.UUID;
 
 /**
- * Implements resume analysis per DAY07_AI_SERVICE.md. Security rule
- * "Candidate can analyze only own resume" is enforced structurally:
- * this service is only ever invoked with the {@code candidateId}
- * resolved from the authenticated JWT principal (see
+ * Implements resume analysis per DAY07_AI_SERVICE.md, upgraded by
+ * DAY10_AI_Enhancement_ATS_Intelligence.md's "Resume Extraction
+ * Improvements": the candidate supplies only a resume PDF URL -
+ * {@link ResumeTextExtractionService} downloads and extracts its text
+ * server-side (PDF Resume -&gt; PDF Text Extraction -&gt; Gemini Analysis
+ * -&gt; Structured Response) rather than requiring pre-extracted text
+ * from the frontend. Security rule "Candidate can analyze only own
+ * resume" is enforced structurally: this service is only ever invoked
+ * with the {@code candidateId} resolved from the authenticated JWT
+ * principal (see
  * {@link com.prahlad.aijobportal.aiservice.resumeanalysis.controller.ResumeAnalysisController}) —
  * there is no request parameter through which a candidate could supply
  * a different candidateId.
@@ -51,6 +59,13 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
             - weaknesses: an array of short strings describing the resume's weaknesses
             - missingSkills: an array of short strings naming skills commonly expected for this candidate's apparent target roles but missing from the resume
             - recommendations: an array of short, actionable strings for improving the resume
+            - professionalSummary: a short 2-3 sentence professional summary of the candidate, written from the resume content (if the resume already has a summary/objective section, refine it; otherwise synthesize one from the rest of the resume)
+            - projects: an array of short strings, one per project found in the resume, naming the project and its key technology/outcome
+            - certifications: an array of short strings naming certifications found in the resume; empty array if none are present
+            - languages: an array of short strings naming spoken/written languages found in the resume; empty array if none are present
+            - achievements: an array of short strings naming notable achievements, awards, or measurable accomplishments found in the resume; empty array if none are present
+
+            Only extract projects, certifications, languages, and achievements that are actually present in the resume text - never invent them.
 
             %s
 
@@ -62,12 +77,14 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
     private final ResumeAnalysisMapper resumeAnalysisMapper;
     private final AiStructuredResponseService aiStructuredResponseService;
     private final AiEventPublisher aiEventPublisher;
+    private final ResumeTextExtractionService resumeTextExtractionService;
 
     @Override
     @Transactional
     @CacheEvict(cacheNames = RedisCacheConfig.RESUME_ANALYSIS_CACHE, key = "#candidateId")
     public ResumeAnalysisResponse analyze(UUID candidateId, AnalyzeResumeRequest request) {
-        String resumeTextHash = sha256(request.resumeText());
+        String resumeText = resumeTextExtractionService.extractText(request.resumeUrl());
+        String resumeTextHash = sha256(resumeText);
 
         ResumeAnalysis existing = resumeAnalysisRepository
                 .findTopByCandidateIdAndResumeTextHashOrderByCreatedAtDesc(candidateId, resumeTextHash)
@@ -80,7 +97,7 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
 
         ResumeAnalysisAiResult aiResult = aiStructuredResponseService.generateStructured(
                 PROMPT_TEMPLATE.formatted(UntrustedTextGuard.INSTRUCTION,
-                        UntrustedTextGuard.wrap("RESUME", request.resumeText())),
+                        UntrustedTextGuard.wrap("RESUME", resumeText)),
                 ResumeAnalysisAiResult.class);
 
         int clampedScore = Math.max(0, Math.min(100, aiResult.atsScore()));
@@ -88,7 +105,7 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
         ResumeAnalysis entity = ResumeAnalysis.builder()
                 .candidateId(candidateId)
                 .resumeUrl(request.resumeUrl())
-                .resumeText(request.resumeText())
+                .resumeText(resumeText)
                 .resumeTextHash(resumeTextHash)
                 .atsScore(clampedScore)
                 .strengths(resumeAnalysisMapper.toDelimited(aiResult.strengths()))
@@ -105,7 +122,34 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
         aiEventPublisher.publishAtsCompleted(new ATSCompletedEvent(
                 entity.getId(), candidateId, clampedScore, Instant.now()));
 
-        return resumeAnalysisMapper.toResponse(entity);
+        return withExtraction(resumeAnalysisMapper.toResponse(entity), aiResult);
+    }
+
+    /**
+     * Layers the AI-only extraction fields (professional summary,
+     * projects, certifications, languages, achievements) onto a
+     * response otherwise built by {@link ResumeAnalysisMapper} from
+     * the persisted entity. These fields are never written to the
+     * entity, so this is the only place they are populated - a fresh
+     * Gemini call just happened and {@code aiResult} still has them in
+     * memory.
+     */
+    private ResumeAnalysisResponse withExtraction(ResumeAnalysisResponse base, ResumeAnalysisAiResult aiResult) {
+        return new ResumeAnalysisResponse(
+                base.id(),
+                base.candidateId(),
+                base.resumeUrl(),
+                base.atsScore(),
+                base.strengths(),
+                base.weaknesses(),
+                base.missingSkills(),
+                base.recommendations(),
+                base.createdAt(),
+                aiResult.professionalSummary(),
+                aiResult.projects() == null ? List.of() : aiResult.projects(),
+                aiResult.certifications() == null ? List.of() : aiResult.certifications(),
+                aiResult.languages() == null ? List.of() : aiResult.languages(),
+                aiResult.achievements() == null ? List.of() : aiResult.achievements());
     }
 
     @Override

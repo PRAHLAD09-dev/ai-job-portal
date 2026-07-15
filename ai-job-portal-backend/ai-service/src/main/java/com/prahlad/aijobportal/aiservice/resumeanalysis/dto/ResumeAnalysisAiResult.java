@@ -14,6 +14,11 @@ public record ResumeAnalysisAiResult(
         List<String> strengths,
         List<String> weaknesses,
         List<String> missingSkills,
-        List<String> recommendations
+        List<String> recommendations,
+        String professionalSummary,
+        List<String> projects,
+        List<String> certifications,
+        List<String> languages,
+        List<String> achievements
 ) {
 }

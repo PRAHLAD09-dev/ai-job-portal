@@ -49,7 +49,8 @@ public class GeminiTextGenerationClient implements GeminiClient {
                 List.of(new GeminiGenerateContentRequest.Content(
                         List.of(new GeminiGenerateContentRequest.Part(prompt)))),
                 new GeminiGenerateContentRequest.GenerationConfig(
-                        geminiProperties.getTemperature(), geminiProperties.getMaxOutputTokens())
+                        geminiProperties.getTemperature(), geminiProperties.getMaxOutputTokens(),
+                        new GeminiGenerateContentRequest.ThinkingConfig(0))
         );
 
         String uri = "/models/%s:generateContent?key=%s".formatted(geminiProperties.getModel(), geminiProperties.getApiKey());
@@ -115,7 +116,16 @@ public class GeminiTextGenerationClient implements GeminiClient {
             throw new AiGenerationException("The AI provider returned an empty response");
         }
 
-        GeminiGenerateContentResponse.Content content = response.candidates().get(0).content();
+        GeminiGenerateContentResponse.Candidate candidate = response.candidates().get(0);
+        if (candidate.finishReason() != null && !"STOP".equals(candidate.finishReason())) {
+            // MAX_TOKENS here means the response was cut off mid-JSON -
+            // downstream parsing will fail with a clear cause instead of
+            // silently returning truncated data.
+            log.warn("Gemini generateContent finished with reason={} (expected STOP) - response may be truncated or blocked",
+                    candidate.finishReason());
+        }
+
+        GeminiGenerateContentResponse.Content content = candidate.content();
         if (content == null || content.parts() == null || content.parts().isEmpty()) {
             throw new AiGenerationException("The AI provider returned no content");
         }

@@ -67,7 +67,8 @@ class RecommendationServiceImplTest {
                 .thenReturn(new RecruiterSummaryResponse(UUID.randomUUID(), recruiterUserId, "r@x.com", "Recruiter", recruiterCompanyId, "MyCo"));
         when(jobLookupService.fetchJob(jobId))
                 .thenReturn(new JobDetailSummaryResponse(jobId, jobCompanyId, "OtherCo", "Backend Engineer",
-                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", Instant.now(), List.of()));
+                        "desc", "FULL_TIME", "MID", "REMOTE", "PUBLISHED", null, null, null, null,
+                        Instant.now(), List.of(), List.of(), List.of()));
 
         assertThatThrownBy(() -> recommendationService.recommendCandidates(recruiterUserId, bearerToken, jobId))
                 .isInstanceOf(AiAccessDeniedException.class);
@@ -81,7 +82,7 @@ class RecommendationServiceImplTest {
         when(candidateLookupService.fetchCurrentCandidate(bearerToken))
                 .thenReturn(new CandidateProfileSummaryResponse(
                         candidateId, candidateId, "c@x.com", "Candidate", "Backend Dev", "Summary",
-                        "City", "State", "Country", List.of(), List.of(), List.of()));
+                        "City", "State", "Country", List.of(), List.of(), List.of(), List.of()));
         when(jobLookupService.fetchLatestJobs()).thenReturn(List.of());
 
         List<JobRecommendationResponse> result = recommendationService.recommendJobs(candidateId, bearerToken);

@@ -49,14 +49,30 @@ public class AiStructuredResponseService {
         }
     }
 
+    /**
+     * Handles both the normal case (a matched opening/closing pair of
+     * fences) and a truncated response that only has the opening
+     * fence - which would otherwise fall through and hand Jackson text
+     * that still starts with a "```json" marker, producing a
+     * misleading "unexpected character '`'" error instead of a clear
+     * "invalid/incomplete JSON" one.
+     */
     private String stripCodeFences(String text) {
         String trimmed = text.strip();
         if (trimmed.startsWith("```")) {
             int firstNewline = trimmed.indexOf('\n');
+            if (firstNewline == -1) {
+                return trimmed;
+            }
             int lastFence = trimmed.lastIndexOf("```");
-            if (firstNewline != -1 && lastFence > firstNewline) {
+            if (lastFence > firstNewline) {
                 return trimmed.substring(firstNewline + 1, lastFence).strip();
             }
+            // No closing fence found (response was likely truncated) -
+            // still strip the opening marker so the caller's JSON
+            // parse failure clearly reflects "incomplete JSON", not
+            // "there's a stray backtick here".
+            return trimmed.substring(firstNewline + 1).strip();
         }
         return trimmed;
     }

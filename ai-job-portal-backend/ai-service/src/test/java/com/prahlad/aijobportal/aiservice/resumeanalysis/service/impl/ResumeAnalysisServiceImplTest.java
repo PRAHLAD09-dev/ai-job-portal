@@ -8,6 +8,7 @@ import com.prahlad.aijobportal.aiservice.resumeanalysis.dto.response.ResumeAnaly
 import com.prahlad.aijobportal.aiservice.resumeanalysis.entity.ResumeAnalysis;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.mapper.ResumeAnalysisMapper;
 import com.prahlad.aijobportal.aiservice.resumeanalysis.repository.ResumeAnalysisRepository;
+import com.prahlad.aijobportal.aiservice.resumeanalysis.service.ResumeTextExtractionService;
 import com.prahlad.aijobportal.common.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class ResumeAnalysisServiceImplTest {
     @Mock private ResumeAnalysisRepository resumeAnalysisRepository;
     @Mock private AiStructuredResponseService aiStructuredResponseService;
     @Mock private AiEventPublisher aiEventPublisher;
+    @Mock private ResumeTextExtractionService resumeTextExtractionService;
 
     private ResumeAnalysisMapper resumeAnalysisMapper;
     private ResumeAnalysisServiceImpl resumeAnalysisService;
@@ -46,10 +48,12 @@ class ResumeAnalysisServiceImplTest {
     void setUp() {
         resumeAnalysisMapper = new ResumeAnalysisMapperImplForTest();
         resumeAnalysisService = new ResumeAnalysisServiceImpl(
-                resumeAnalysisRepository, resumeAnalysisMapper, aiStructuredResponseService, aiEventPublisher);
+                resumeAnalysisRepository, resumeAnalysisMapper, aiStructuredResponseService, aiEventPublisher,
+                resumeTextExtractionService);
 
         candidateId = UUID.randomUUID();
-        request = new AnalyzeResumeRequest("https://cloudinary.com/resume.pdf", "5 years Java experience");
+        request = new AnalyzeResumeRequest("https://cloudinary.com/resume.pdf");
+        when(resumeTextExtractionService.extractText(anyString())).thenReturn("5 years Java experience");
     }
 
     @Test
@@ -59,7 +63,12 @@ class ResumeAnalysisServiceImplTest {
 
         ResumeAnalysisAiResult aiResult = new ResumeAnalysisAiResult(
                 85, List.of("Strong Java skills"), List.of("No cloud experience"),
-                List.of("Kubernetes"), List.of("Add a projects section"));
+                List.of("Kubernetes"), List.of("Add a projects section"),
+                "Backend engineer with 5 years of Java experience.",
+                List.of("Inventory service - Spring Boot, Kafka"),
+                List.of("AWS Certified Developer"),
+                List.of("English"),
+                List.of("Reduced API latency by 30%"));
         when(aiStructuredResponseService.generateStructured(anyString(), org.mockito.ArgumentMatchers.eq(ResumeAnalysisAiResult.class)))
                 .thenReturn(aiResult);
 
@@ -74,6 +83,11 @@ class ResumeAnalysisServiceImplTest {
 
         assertThat(response.atsScore()).isEqualTo(85);
         assertThat(response.strengths()).containsExactly("Strong Java skills");
+        assertThat(response.professionalSummary()).isEqualTo("Backend engineer with 5 years of Java experience.");
+        assertThat(response.projects()).containsExactly("Inventory service - Spring Boot, Kafka");
+        assertThat(response.certifications()).containsExactly("AWS Certified Developer");
+        assertThat(response.languages()).containsExactly("English");
+        assertThat(response.achievements()).containsExactly("Reduced API latency by 30%");
 
         ArgumentCaptor<ResumeAnalysis> captor = ArgumentCaptor.forClass(ResumeAnalysis.class);
         verify(resumeAnalysisRepository).save(captor.capture());
@@ -90,7 +104,7 @@ class ResumeAnalysisServiceImplTest {
                 .id(UUID.randomUUID())
                 .candidateId(candidateId)
                 .resumeUrl(request.resumeUrl())
-                .resumeText(request.resumeText())
+                .resumeText("5 years Java experience")
                 .atsScore(70)
                 .strengths("Good communication")
                 .build();
@@ -131,7 +145,8 @@ class ResumeAnalysisServiceImplTest {
             return new ResumeAnalysisResponse(
                     entity.getId(), entity.getCandidateId(), entity.getResumeUrl(), entity.getAtsScore(),
                     toList(entity.getStrengths()), toList(entity.getWeaknesses()),
-                    toList(entity.getMissingSkills()), toList(entity.getRecommendations()), entity.getCreatedAt());
+                    toList(entity.getMissingSkills()), toList(entity.getRecommendations()), entity.getCreatedAt(),
+                    null, null, null, null, null);
         }
     }
 }

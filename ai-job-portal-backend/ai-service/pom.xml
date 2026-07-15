@@ -128,6 +128,17 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Apache PDFBox: server-side PDF text extraction for resume analysis,
+             per DAY10_AI_Enhancement_ATS_Intelligence.md's "Resume Extraction
+             Improvements" — the candidate uploads only a PDF; this service
+             extracts and normalizes the text itself instead of requiring the
+             frontend to supply pre-extracted resumeText. -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.3</version>
+        </dependency>
+
         <dependency>
             <groupId>org.mapstruct</groupId>
             <artifactId>mapstruct</artifactId>

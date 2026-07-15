@@ -23,9 +23,13 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Candidate-facing resume AI endpoints, per DAY07_AI_SERVICE.md's "AI
- * Endpoints" section. Security rule "Candidate can analyze only own
- * resume" is enforced by always deriving {@code candidateId} from the
- * authenticated JWT principal — never from a request parameter.
+ * Endpoints" section, upgraded by DAY10_AI_Enhancement_ATS_Intelligence.md's
+ * "Resume Extraction Improvements": both endpoints below take only the
+ * resume PDF's Cloudinary URL - text is extracted server-side by
+ * {@code ResumeTextExtractionService}, never supplied by the caller.
+ * Security rule "Candidate can analyze only own resume" is enforced by
+ * always deriving {@code candidateId} from the authenticated JWT
+ * principal — never from a request parameter.
  */
 @RestController
 @RequestMapping(CommonConstants.API_BASE_PATH + "/ai/resume")
@@ -37,7 +41,10 @@ public class ResumeAnalysisController {
     private final ATSScoreService atsScoreService;
 
     @PostMapping("/analyze")
-    @Operation(summary = "Analyze the authenticated candidate's resume")
+    @Operation(summary = "Analyze the authenticated candidate's resume",
+            description = "Downloads the PDF at request.resumeUrl, extracts and normalizes its text "
+                    + "server-side (Apache PDFBox), then runs it through Gemini. The frontend must not "
+                    + "supply pre-extracted resume text.")
     public ResponseEntity<ApiResponse<ResumeAnalysisResponse>> analyze(
             @AuthenticationPrincipal AuthenticatedUser principal,
             @Valid @RequestBody AnalyzeResumeRequest request) {
@@ -55,7 +62,8 @@ public class ResumeAnalysisController {
     }
 
     @PostMapping("/score")
-    @Operation(summary = "Get a quick ATS compatibility score for resume text")
+    @Operation(summary = "Get a quick ATS compatibility score for a resume PDF",
+            description = "Downloads the PDF at request.resumeUrl and extracts its text server-side, same as /analyze.")
     public ResponseEntity<ApiResponse<ATSScoreResponse>> score(
             @Valid @RequestBody AnalyzeResumeRequest request) {
         ATSScoreResponse response = atsScoreService.score(request);
