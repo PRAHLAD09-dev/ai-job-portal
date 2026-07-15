@@ -12,6 +12,7 @@ import type {
 export const AI_RESUME_ANALYSIS_LATEST_KEY = ["ai", "resume-analysis", "latest"] as const;
 export const AI_SKILL_GAP_KEY = ["ai", "skill-gap"] as const;
 export const AI_JOB_RECOMMENDATIONS_KEY = ["ai", "job-recommendations"] as const;
+export const AI_LEARNING_ROADMAP_KEY = ["ai", "learning-roadmap"] as const;
 
 /** Candidate-facing job matches — POST endpoint under the hood but treated as cacheable read data. */
 export function useJobRecommendations(enabled: boolean) {
@@ -63,6 +64,16 @@ export function useSkillGap(enabled: boolean) {
   return useQuery({
     queryKey: AI_SKILL_GAP_KEY,
     queryFn: () => aiService.getSkillGap().then((res) => res.data),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Beginner-to-advanced learning path for the candidate — GET /ai/learning-roadmap. */
+export function useLearningRoadmap(enabled: boolean) {
+  return useQuery({
+    queryKey: AI_LEARNING_ROADMAP_KEY,
+    queryFn: () => aiService.getLearningRoadmap().then((res) => res.data),
     enabled,
     staleTime: 5 * 60 * 1000,
   });

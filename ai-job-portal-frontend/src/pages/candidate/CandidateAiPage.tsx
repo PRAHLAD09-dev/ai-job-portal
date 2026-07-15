@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { FileText, LayoutDashboard, Mail, Sparkles, TrendingUp } from "lucide-react";
+import { FileText, LayoutDashboard, Mail, Map, Sparkles, TrendingUp } from "lucide-react";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
 import { AiDashboardOverview } from "@/features/ai/components/AiDashboardOverview";
 import { ResumeAnalysisPanel } from "@/features/ai/components/ResumeAnalysisPanel";
 import { JobRecommendations } from "@/features/ai/components/JobRecommendations";
 import { CoverLetterGenerator } from "@/features/ai/components/CoverLetterGenerator";
 import { SkillGapAnalysis } from "@/features/ai/components/SkillGapAnalysis";
+import { LearningRoadmapPanel } from "@/features/ai/components/LearningRoadmapPanel";
 
 const TAB_ITEMS: TabItem[] = [
   { value: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
@@ -13,6 +14,7 @@ const TAB_ITEMS: TabItem[] = [
   { value: "jobs", label: "Job Matches", icon: <Sparkles className="h-4 w-4" /> },
   { value: "cover-letter", label: "Cover Letter", icon: <Mail className="h-4 w-4" /> },
   { value: "skills", label: "Skill Gap", icon: <TrendingUp className="h-4 w-4" /> },
+  { value: "roadmap", label: "Learning Roadmap", icon: <Map className="h-4 w-4" /> },
 ];
 
 export default function CandidateAiPage() {
@@ -35,6 +37,7 @@ export default function CandidateAiPage() {
       {activeTab === "jobs" && <JobRecommendations />}
       {activeTab === "cover-letter" && <CoverLetterGenerator />}
       {activeTab === "skills" && <SkillGapAnalysis />}
+      {activeTab === "roadmap" && <LearningRoadmapPanel />}
     </div>
   );
 }

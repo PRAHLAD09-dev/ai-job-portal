@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { RefreshCw, Search, Sparkles } from "lucide-react";
+import { ChevronDown, RefreshCw, Search, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/common/EmptyState";
 import { buildRoute } from "@/constants/routes";
 import { useJobRecommendations } from "@/features/ai/hooks/useAi";
+import { MatchBreakdownBars } from "@/features/ai/components/MatchBreakdownBars";
 import type { JobRecommendationResponse } from "@/features/ai/types";
 
 function scoreVariant(score: number) {
@@ -16,23 +17,47 @@ function scoreVariant(score: number) {
   return "text-danger-500";
 }
 
+/** One job match card — collapsed shows the overall score; expanded reveals the
+ * Explainable AI breakdown (six dimension bars + reasoning bullets), per
+ * DAY06_FRONTEND_AI_ENHANCEMENT.md's "AI Job Match" and "Explainable AI" sections. */
 function RecommendationCard({ recommendation }: { recommendation: JobRecommendationResponse }) {
+  const [expanded, setExpanded] = useState(false);
+
   return (
-    <Link to={buildRoute.candidateJobDetails(recommendation.jobId)}>
-      <Card className="transition-shadow hover:shadow-md">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="truncate font-semibold">{recommendation.jobTitle}</p>
-            <p className="truncate text-sm text-[hsl(var(--muted))]">{recommendation.companyName}</p>
-          </div>
-          <div className={`shrink-0 text-right ${scoreVariant(recommendation.matchScore)}`}>
-            <p className="text-lg font-semibold">{recommendation.matchScore}%</p>
-            <p className="text-[11px] text-[hsl(var(--muted))]">match</p>
-          </div>
+    <Card className="transition-shadow hover:shadow-md">
+      <div className="flex items-start justify-between gap-3">
+        <Link to={buildRoute.candidateJobDetails(recommendation.jobId)} className="min-w-0">
+          <p className="truncate font-semibold hover:text-primary-600">{recommendation.jobTitle}</p>
+          <p className="truncate text-sm text-[hsl(var(--muted))]">{recommendation.companyName}</p>
+        </Link>
+        <div className={`shrink-0 text-right ${scoreVariant(recommendation.matchScore)}`}>
+          <p className="text-lg font-semibold">{recommendation.matchScore}%</p>
+          <p className="text-[11px] text-[hsl(var(--muted))]">match</p>
         </div>
-        <p className="mt-3 line-clamp-2 text-sm text-[hsl(var(--muted))]">{recommendation.reasoning}</p>
-      </Card>
-    </Link>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="mt-3 flex w-full items-center justify-between text-left text-sm text-primary-600"
+      >
+        <span>Why this job matches</span>
+        <ChevronDown className={`h-4 w-4 transition-transform ${expanded ? "rotate-180" : ""}`} />
+      </button>
+
+      {expanded && (
+        <div className="mt-3 space-y-4 border-t border-[hsl(var(--border-color))] pt-3">
+          <MatchBreakdownBars breakdown={recommendation.matchBreakdown} />
+          {recommendation.reasoning.length > 0 && (
+            <ul className="list-disc space-y-1 pl-5 text-sm text-[hsl(var(--muted))]">
+              {recommendation.reasoning.map((point, i) => (
+                <li key={i}>{point}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 

@@ -11,12 +11,13 @@ import type {
   JobDescriptionRequest,
   JobDescriptionResponse,
   JobRecommendationResponse,
+  LearningRoadmapResponse,
   ResumeAnalysisResponse,
   SkillGapResponse,
 } from "@/features/ai/types";
 
 /** Maps 1:1 to ai-service RecommendationController, JobDescriptionController, InterviewQuestionController,
- * ResumeAnalysisController, CoverLetterController, SkillGapController. */
+ * ResumeAnalysisController, CoverLetterController, SkillGapController, LearningRoadmapController. */
 export const aiService = {
   recommendJobs: () =>
     apiClient.post<ApiResponse<JobRecommendationResponse[]>>("/ai/jobs/recommend").then((res) => res.data),
@@ -54,4 +55,7 @@ export const aiService = {
     apiClient.post<ApiResponse<CoverLetterResponse>>("/ai/cover-letter", payload).then((res) => res.data),
 
   getSkillGap: () => apiClient.get<ApiResponse<SkillGapResponse>>("/ai/skills/gap").then((res) => res.data),
+
+  getLearningRoadmap: () =>
+    apiClient.get<ApiResponse<LearningRoadmapResponse>>("/ai/learning-roadmap").then((res) => res.data),
 };

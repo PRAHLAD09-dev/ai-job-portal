@@ -3,7 +3,6 @@ import { Copy, Download, FileWarning, RefreshCw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +60,58 @@ function ResultList({ title, items, variant }: { title: string; items: string[];
   );
 }
 
+/** One extracted section (projects, certifications, ...) rendered as a structured card,
+ * per DAY06_FRONTEND_AI_ENHANCEMENT.md's "Resume Extraction" section. */
+function ExtractionCard({ title, items }: { title: string; items: string[] }) {
+  if (items.length === 0) return null;
+  return (
+    <div className="rounded-lg border border-[hsl(var(--border-color))] p-3">
+      <p className="text-sm font-medium">{title}</p>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[hsl(var(--muted))]">
+        {items.map((item, i) => (
+          <li key={i}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/**
+ * AI-extracted resume sections — professionalSummary/projects/certifications/
+ * languages/achievements. Per ai-service's ResumeAnalysisResponse contract,
+ * these are only populated on a fresh analysis (not on a duplicate-text hit
+ * or the "latest" endpoint, since they aren't persisted) — so they render
+ * only when present rather than showing an empty section.
+ */
+function ExtractedResumeDetails({ analysis }: { analysis: ResumeAnalysisResponse }) {
+  const hasAnyExtraction =
+    !!analysis.professionalSummary ||
+    (analysis.projects?.length ?? 0) > 0 ||
+    (analysis.certifications?.length ?? 0) > 0 ||
+    (analysis.languages?.length ?? 0) > 0 ||
+    (analysis.achievements?.length ?? 0) > 0;
+
+  if (!hasAnyExtraction) return null;
+
+  return (
+    <div className="mt-6 space-y-4">
+      <h3 className="text-base font-semibold">Extracted from your resume</h3>
+      {analysis.professionalSummary && (
+        <div className="rounded-lg border border-[hsl(var(--border-color))] p-3">
+          <p className="text-sm font-medium">Professional Summary</p>
+          <p className="mt-2 text-sm text-[hsl(var(--muted))]">{analysis.professionalSummary}</p>
+        </div>
+      )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <ExtractionCard title="Projects" items={analysis.projects ?? []} />
+        <ExtractionCard title="Certifications" items={analysis.certifications ?? []} />
+        <ExtractionCard title="Languages" items={analysis.languages ?? []} />
+        <ExtractionCard title="Achievements" items={analysis.achievements ?? []} />
+      </div>
+    </div>
+  );
+}
+
 function AnalysisResult({ analysis }: { analysis: ResumeAnalysisResponse }) {
   const handleCopy = () => {
     const text = [
@@ -91,6 +142,11 @@ function AnalysisResult({ analysis }: { analysis: ResumeAnalysisResponse }) {
       ``,
       `RECOMMENDATIONS`,
       ...analysis.recommendations.map((s) => `- ${s}`),
+      ...(analysis.professionalSummary ? [``, `PROFESSIONAL SUMMARY`, analysis.professionalSummary] : []),
+      ...(analysis.projects?.length ? [``, `PROJECTS`, ...analysis.projects.map((s) => `- ${s}`)] : []),
+      ...(analysis.certifications?.length ? [``, `CERTIFICATIONS`, ...analysis.certifications.map((s) => `- ${s}`)] : []),
+      ...(analysis.languages?.length ? [``, `LANGUAGES`, ...analysis.languages.map((s) => `- ${s}`)] : []),
+      ...(analysis.achievements?.length ? [``, `ACHIEVEMENTS`, ...analysis.achievements.map((s) => `- ${s}`)] : []),
     ].join("\n");
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -112,6 +168,9 @@ function AnalysisResult({ analysis }: { analysis: ResumeAnalysisResponse }) {
           <ResultList title="Recommendations" items={analysis.recommendations} variant="primary" />
         </div>
       </div>
+
+      <ExtractedResumeDetails analysis={analysis} />
+
       <p className="text-xs text-[hsl(var(--muted))]">
         Last analyzed {new Date(analysis.createdAt).toLocaleString()}
       </p>
@@ -128,12 +187,11 @@ function AnalysisResult({ analysis }: { analysis: ResumeAnalysisResponse }) {
 }
 
 /**
- * Resume analysis + ATS score. Per KNOWN_BACKEND_LIMITATIONS.md (Day 04),
- * candidate-service stores only the resume file's Cloudinary URL — it never
- * extracts plain text from the file — while ai-service's AnalyzeResumeRequest
- * requires resumeText directly. So the candidate pastes their resume text
- * here (pre-filled resumeUrl from a selected uploaded resume); nothing is
- * fabricated or auto-extracted client-side.
+ * Resume analysis + ATS score. Per DAY10_AI_Enhancement_ATS_Intelligence.md's
+ * "Resume Extraction Improvements", ai-service now downloads the candidate's
+ * resume PDF from its Cloudinary URL and extracts the text itself (Apache
+ * PDFBox) — the candidate just picks one of their uploaded resumes and
+ * clicks Analyze; no resume text is ever collected or sent from here.
  */
 export function ResumeAnalysisPanel() {
   const { data: resumes, isLoading: isLoadingResumes } = useResumesList();
@@ -142,7 +200,6 @@ export function ResumeAnalysisPanel() {
   const score = useScoreResume();
 
   const [resumeId, setResumeId] = useState("");
-  const [resumeText, setResumeText] = useState("");
 
   useEffect(() => {
     if (!resumeId && resumes && resumes.length > 0) {
@@ -151,16 +208,16 @@ export function ResumeAnalysisPanel() {
   }, [resumes, resumeId]);
 
   const selectedResume = resumes?.find((r) => r.id === resumeId);
-  const canSubmit = !!selectedResume && resumeText.trim().length > 0;
+  const canSubmit = !!selectedResume;
 
   const handleAnalyze = () => {
     if (!selectedResume) return;
-    analyze.mutate({ resumeUrl: selectedResume.fileUrl, resumeText: resumeText.trim() });
+    analyze.mutate({ resumeUrl: selectedResume.fileUrl });
   };
 
   const handleQuickScore = () => {
     if (!selectedResume) return;
-    score.mutate({ resumeUrl: selectedResume.fileUrl, resumeText: resumeText.trim() });
+    score.mutate({ resumeUrl: selectedResume.fileUrl });
   };
 
   const displayedAnalysis = analyze.data ?? (!hasNoAnalysisYet ? latestAnalysis : undefined);
@@ -173,8 +230,8 @@ export function ResumeAnalysisPanel() {
           <h2 className="text-lg font-semibold">Resume analysis &amp; ATS score</h2>
         </div>
         <p className="mt-1 text-sm text-[hsl(var(--muted))]">
-          Select one of your uploaded resumes and paste its text content — the AI reads the text you provide, since
-          resume file text isn&apos;t auto-extracted by the platform yet.
+          Select one of your uploaded resumes — the AI reads the PDF directly and extracts everything it needs
+          automatically.
         </p>
 
         {isLoadingResumes ? (
@@ -198,16 +255,6 @@ export function ResumeAnalysisPanel() {
                   </option>
                 ))}
               </Select>
-            </FormField>
-            <FormField label="Resume text" htmlFor="resume-text">
-              <Textarea
-                id="resume-text"
-                rows={8}
-                placeholder="Paste the full text content of your resume here..."
-                value={resumeText}
-                onChange={(e) => setResumeText(e.target.value)}
-                maxLength={50000}
-              />
             </FormField>
             <div className="flex flex-wrap gap-2">
               <Button disabled={!canSubmit} isLoading={analyze.isPending} onClick={handleAnalyze}>
@@ -243,7 +290,7 @@ export function ResumeAnalysisPanel() {
           <div className="mt-6">
             <EmptyState
               title="No resume analysis yet"
-              message="Paste your resume text above and click Analyze resume to get your first AI-generated report."
+              message="Click Analyze resume above to get your first AI-generated report."
             />
           </div>
         )}
