@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatEnumLabel } from "@/utils/format";
+import { ViewedBadge } from "@/components/common/ViewedBadge";
 import { ApplicationStatusBadge } from "@/features/recruiter-applications/components/ApplicationStatusBadge";
 import {
   useAddApplicationNotes,
@@ -55,7 +56,10 @@ export function ApplicationDetailModal({ applicationId, onClose }: ApplicationDe
               </a>
               <p className="mt-1 text-sm text-[hsl(var(--muted))]">Applied for {application.jobTitle}</p>
             </div>
-            <ApplicationStatusBadge status={application.status} />
+            <div className="flex flex-col items-end gap-2">
+              <ApplicationStatusBadge status={application.status} />
+              <ViewedBadge viewed={application.viewed} viewedAt={application.viewedAt} />
+            </div>
           </div>
 
           {application.interviewDate && (

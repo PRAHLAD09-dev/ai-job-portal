@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Link } from "react-router-dom";
-import { Building2, Calendar } from "lucide-react";
+import { Building2, Calendar, Eye } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { StatusBadge } from "@/features/applications/components/StatusBadge";
 import { buildRoute } from "@/constants/routes";
@@ -19,6 +19,11 @@ function ApplicationCardComponent({ application }: { application: ApplicationSum
             <p className="mt-1 flex items-center gap-1 text-xs text-[hsl(var(--muted))]">
               <Calendar className="h-3.5 w-3.5" /> Applied {new Date(application.appliedAt).toLocaleDateString()}
             </p>
+            {application.viewed && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-success-500">
+                <Eye className="h-3.5 w-3.5" /> Viewed by recruiter
+              </p>
+            )}
           </div>
           <StatusBadge status={application.status} />
         </div>

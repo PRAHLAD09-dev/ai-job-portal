@@ -1,6 +1,6 @@
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Plus, Trash2, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,6 +61,8 @@ export function JobForm({ job, isSubmitting, submitLabel, onSubmit }: JobFormPro
           currency: job.currency,
           vacancies: job.vacancies,
           applicationDeadline: toDateTimeLocal(job.applicationDeadline),
+          applyMethod: job.applyMethod,
+          externalApplyUrl: job.externalApplyUrl ?? "",
           locations: job.locations.map((l) => ({ city: l.city, state: l.state, country: l.country })),
           skills: job.skills.map((s) => ({
             name: s.name,
@@ -87,12 +89,16 @@ export function JobForm({ job, isSubmitting, submitLabel, onSubmit }: JobFormPro
           currency: null,
           vacancies: 1,
           applicationDeadline: "",
+          applyMethod: "EASY_APPLY",
+          externalApplyUrl: "",
           locations: [{ city: "", state: "", country: "" }],
           skills: [],
           benefits: [],
           requirements: [],
         },
   });
+
+  const applyMethod = useWatch({ control, name: "applyMethod" });
 
   const locationsArray = useFieldArray({ control, name: "locations" });
   const skillsArray = useFieldArray({ control, name: "skills" });
@@ -113,6 +119,8 @@ export function JobForm({ job, isSubmitting, submitLabel, onSubmit }: JobFormPro
       currency: values.currency ?? null,
       vacancies: values.vacancies,
       applicationDeadline: values.applicationDeadline ? new Date(values.applicationDeadline).toISOString() : null,
+      applyMethod: values.applyMethod,
+      externalApplyUrl: values.applyMethod === "EXTERNAL_APPLY" ? values.externalApplyUrl || null : null,
       locations: values.locations.map((l) => ({ city: l.city, state: l.state || null, country: l.country })),
       skills: values.skills,
       benefits: values.benefits.map((b) => ({ title: b.title, description: b.description || null })),
@@ -183,6 +191,70 @@ export function JobForm({ job, isSubmitting, submitLabel, onSubmit }: JobFormPro
             </FormField>
           </div>
         </div>
+      </Card>
+
+      <Card>
+        <h2 className="text-lg font-semibold">Apply method</h2>
+        <p className="mt-1 text-sm text-[hsl(var(--muted))]">
+          Choose how candidates apply for this job. The candidate-facing Apply button adapts automatically.
+        </p>
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <label
+            className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm ${
+              applyMethod === "EASY_APPLY" ? "border-primary-600 bg-primary-600/5" : "border-[hsl(var(--border-color))]"
+            }`}
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <input type="radio" value="EASY_APPLY" {...register("applyMethod")} /> Easy Apply
+            </span>
+            <span className="text-xs text-[hsl(var(--muted))]">
+              Candidate picks a resume and writes a cover letter in-app.
+            </span>
+          </label>
+          <label
+            className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm ${
+              applyMethod === "QUICK_APPLY" ? "border-primary-600 bg-primary-600/5" : "border-[hsl(var(--border-color))]"
+            }`}
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <input type="radio" value="QUICK_APPLY" {...register("applyMethod")} />
+              <Zap className="h-3.5 w-3.5" /> Quick Apply
+            </span>
+            <span className="text-xs text-[hsl(var(--muted))]">
+              In-app, one click — candidate's active resume is used automatically.
+            </span>
+          </label>
+          <label
+            className={`flex cursor-pointer flex-col gap-1 rounded-lg border p-3 text-sm ${
+              applyMethod === "EXTERNAL_APPLY" ? "border-primary-600 bg-primary-600/5" : "border-[hsl(var(--border-color))]"
+            }`}
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <input type="radio" value="EXTERNAL_APPLY" {...register("applyMethod")} />
+              <ExternalLink className="h-3.5 w-3.5" /> External Apply
+            </span>
+            <span className="text-xs text-[hsl(var(--muted))]">
+              No in-app application — candidates are redirected to your careers site.
+            </span>
+          </label>
+        </div>
+        {applyMethod === "EXTERNAL_APPLY" && (
+          <div className="mt-4">
+            <FormField
+              label="External apply URL"
+              htmlFor="externalApplyUrl"
+              required
+              error={errors.externalApplyUrl?.message}
+            >
+              <Input
+                id="externalApplyUrl"
+                type="url"
+                placeholder="https://careers.example.com/apply/123"
+                {...register("externalApplyUrl")}
+              />
+            </FormField>
+          </div>
+        )}
       </Card>
 
       <Card>

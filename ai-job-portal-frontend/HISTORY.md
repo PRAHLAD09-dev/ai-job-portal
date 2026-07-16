@@ -84,3 +84,45 @@ roadmap/courses, and recommendation pagination.
 Verified in this pass: `npm install`, `npx tsc -b` (0 errors), `npm run
 build` (production build succeeds), `npm run lint` (0 errors, 3
 pre-existing warnings unrelated to this change).
+
+## Day 07 — ATS & Candidate Experience Enhancement
+
+Wires the frontend up to the DAY11 backend ATS additions
+(`job-service`, `application-service`, `recruiter-service`). No new
+pages, routes, or microservices — every change extends an existing
+feature module or page, per `DAY07_FRONTEND_ATS_ENHANCEMENT.md`.
+
+- **Saved Jobs** — new `SavedJobCard` shows saved date and AI match %
+  (sourced from the candidate's real job-recommendation scores, shown
+  only when the AI service has actually scored that job — never
+  estimated). `SavedJobsPage` rewritten to use it.
+- **Viewed by Recruiter** — new shared `ViewedBadge`. Wired into the
+  candidate's application detail page + application cards, and the
+  recruiter's application list + detail modal (which already triggers
+  the view via `GET /recruiter/applications/{id}`).
+- **Apply Methods** — `JobResponse`/`JobSummaryResponse` now carry
+  `applyMethod`/`externalApplyUrl`. `JobDetailsPage`'s Apply button
+  adapts automatically: Easy Apply opens the resume-picker dialog,
+  Quick Apply opens a one-click dialog with no resume picker, External
+  Apply redirects to the company's site in a new tab. Recruiters choose
+  the method (with conditional external-URL validation) in `JobForm`.
+- **Company Location Map** — new `leaflet` + `react-leaflet`
+  dependency and a shared `CompanyLocationMap` component (OpenStreetMap
+  tiles, zoom/marker/popup, HQ highlighted). Recruiters set
+  latitude/longitude per location in `CompanyLocationsManager` (with a
+  live preview map); candidates see the map on the public
+  `CompanyProfilePage`.
+- **Recruiter Dashboard** — new `recruiter-dashboard` feature module
+  calling `GET /recruiter/dashboard` (a single aggregated call).
+  Dashboard now shows a "Recent applications" table with AI Match score
+  + viewed status per row, and a "Saved job statistics" card ranking
+  jobs by bookmark count.
+- **Candidate Dashboard** — added "Viewed by Recruiters" and "AI
+  Match" stat cards (the latter shows the candidate's latest ATS score,
+  or "Not analyzed yet" — never fabricated).
+
+Verified in this pass: `npm install` (leaflet/react-leaflet/@types/leaflet
+added successfully), `npx tsc -b` (0 errors), `npm run build` (production
+build succeeds, incl. the new `CompanyLocationMap` chunk), `npm run lint`
+(0 errors, same 3 pre-existing warnings, unrelated to this change).
+

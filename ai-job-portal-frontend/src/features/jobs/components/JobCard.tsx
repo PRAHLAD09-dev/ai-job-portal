@@ -1,6 +1,6 @@
 import { memo, type MouseEvent } from "react";
 import { Link } from "react-router-dom";
-import { Bookmark, BriefcaseBusiness, MapPin, Sparkles } from "lucide-react";
+import { Bookmark, BriefcaseBusiness, ExternalLink, MapPin, Sparkles, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buildRoute } from "@/constants/routes";
@@ -75,6 +75,16 @@ function JobCardComponent({ job }: { job: JobSummaryResponse }) {
           <Badge variant="outline">{formatEnumLabel(job.jobType)}</Badge>
           <Badge variant="outline">{formatEnumLabel(job.workMode)}</Badge>
           <Badge variant="outline">{formatEnumLabel(job.experienceLevel)}</Badge>
+          {job.applyMethod === "QUICK_APPLY" && (
+            <Badge variant="success">
+              <Zap className="h-3 w-3" /> Quick Apply
+            </Badge>
+          )}
+          {job.applyMethod === "EXTERNAL_APPLY" && (
+            <Badge variant="outline">
+              <ExternalLink className="h-3 w-3" /> External
+            </Badge>
+          )}
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-[hsl(var(--muted))]">

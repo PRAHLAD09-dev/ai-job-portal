@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ViewedBadge } from "@/components/common/ViewedBadge";
 import { StatusBadge } from "@/features/applications/components/StatusBadge";
 import { ApplicationTimeline } from "@/features/applications/components/ApplicationTimeline";
 import {
@@ -58,13 +59,16 @@ export default function ApplicationDetailsPage() {
               <Calendar className="h-3.5 w-3.5" /> Applied on {new Date(application.appliedAt).toLocaleDateString()}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <StatusBadge status={application.status} />
-            {canWithdraw && (
-              <Button variant="outline" size="sm" onClick={() => setIsWithdrawOpen(true)}>
-                <XCircle className="h-4 w-4" /> Withdraw
-              </Button>
-            )}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-3">
+              <StatusBadge status={application.status} />
+              {canWithdraw && (
+                <Button variant="outline" size="sm" onClick={() => setIsWithdrawOpen(true)}>
+                  <XCircle className="h-4 w-4" /> Withdraw
+                </Button>
+              )}
+            </div>
+            <ViewedBadge viewed={application.viewed} viewedAt={application.viewedAt} />
           </div>
         </div>
 

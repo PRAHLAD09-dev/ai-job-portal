@@ -45,6 +45,9 @@ export interface CompanyLocationResponse {
   country: string;
   postalCode: string | null;
   headquarters: boolean;
+  /** DAY11 "Company Location Map" — used to place this location on the Leaflet map. */
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface CompanySocialLinkResponse {
@@ -138,6 +141,8 @@ export interface CompanyLocationRequest {
   country: string;
   postalCode: string | null;
   headquarters: boolean;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 export interface CompanySocialLinkRequest {

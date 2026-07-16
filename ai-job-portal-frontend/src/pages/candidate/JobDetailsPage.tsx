@@ -8,9 +8,11 @@ import {
   Calendar,
   CheckCircle2,
   Clock,
+  ExternalLink,
   MapPin,
   Share2,
   Wallet,
+  Zap,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -120,6 +122,16 @@ export default function JobDetailsPage() {
                 <Badge variant="outline">{formatEnumLabel(job.jobType)}</Badge>
                 <Badge variant="outline">{formatEnumLabel(job.workMode)}</Badge>
                 <Badge variant="outline">{formatEnumLabel(job.experienceLevel)}</Badge>
+                {job.applyMethod === "QUICK_APPLY" && (
+                  <Badge variant="success">
+                    <Zap className="h-3 w-3" /> Quick Apply
+                  </Badge>
+                )}
+                {job.applyMethod === "EXTERNAL_APPLY" && (
+                  <Badge variant="outline">
+                    <ExternalLink className="h-3 w-3" /> External Apply
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -137,9 +149,20 @@ export default function JobDetailsPage() {
             <Button variant="outline" size="sm" onClick={handleShare}>
               <Share2 className="h-4 w-4" /> Share
             </Button>
-            <Button size="sm" onClick={() => setIsApplyOpen(true)} disabled={job.status !== "PUBLISHED"}>
-              Apply Now
-            </Button>
+            {job.applyMethod === "EXTERNAL_APPLY" ? (
+              <Button
+                size="sm"
+                disabled={job.status !== "PUBLISHED" || !job.externalApplyUrl}
+                onClick={() => window.open(job.externalApplyUrl ?? "", "_blank", "noopener,noreferrer")}
+              >
+                <ExternalLink className="h-4 w-4" /> Apply on Company Site
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setIsApplyOpen(true)} disabled={job.status !== "PUBLISHED"}>
+                {job.applyMethod === "QUICK_APPLY" && <Zap className="h-4 w-4" />}
+                {job.applyMethod === "QUICK_APPLY" ? "Quick Apply" : "Apply Now"}
+              </Button>
+            )}
           </div>
         </div>
 
@@ -269,7 +292,15 @@ export default function JobDetailsPage() {
         </div>
       </div>
 
-      <ApplyJobDialog open={isApplyOpen} onOpenChange={setIsApplyOpen} jobId={job.id} jobTitle={job.title} />
+      {job.applyMethod !== "EXTERNAL_APPLY" && (
+        <ApplyJobDialog
+          open={isApplyOpen}
+          onOpenChange={setIsApplyOpen}
+          jobId={job.id}
+          jobTitle={job.title}
+          applyMethod={job.applyMethod}
+        />
+      )}
     </div>
   );
 }

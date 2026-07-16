@@ -49,6 +49,9 @@ export const jobFormSchema = z
     currency: z.enum(["USD", "EUR", "GBP", "INR", "AUD", "CAD"]).nullable().optional(),
     vacancies: z.number().min(1, "Vacancies must be at least 1"),
     applicationDeadline: z.string().nullable().optional(),
+    // DAY11/DAY07 "Apply Methods" — mirrors CreateJobRequest's applyMethod + externalApplyUrl exactly.
+    applyMethod: z.enum(["EASY_APPLY", "QUICK_APPLY", "EXTERNAL_APPLY"]),
+    externalApplyUrl: z.string().max(1000).optional().or(z.literal("")),
     locations: z.array(jobLocationSchema).min(1, "At least one location is required"),
     skills: z.array(jobSkillSchema),
     benefits: z.array(jobBenefitSchema),
@@ -61,5 +64,13 @@ export const jobFormSchema = z
   .refine((data) => !data.applicationDeadline || new Date(data.applicationDeadline).getTime() > Date.now(), {
     message: "Application deadline must be in the future",
     path: ["applicationDeadline"],
+  })
+  .refine((data) => data.applyMethod !== "EXTERNAL_APPLY" || !!data.externalApplyUrl, {
+    message: "External apply URL is required when apply method is External Apply",
+    path: ["externalApplyUrl"],
+  })
+  .refine((data) => !data.externalApplyUrl || z.string().url().safeParse(data.externalApplyUrl).success, {
+    message: "External apply URL must be a valid URL",
+    path: ["externalApplyUrl"],
   });
 export type JobFormValues = z.infer<typeof jobFormSchema>;

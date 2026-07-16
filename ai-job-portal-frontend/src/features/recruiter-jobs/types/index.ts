@@ -1,6 +1,7 @@
 // Mirrors job-service recruiter-management DTOs (POST/PUT /jobs/me/**) exactly.
 // Reuses public browsing types/enums from features/jobs/types where identical.
 import type {
+  ApplyMethod,
   Currency,
   ExperienceLevel,
   JobType,
@@ -47,6 +48,8 @@ export interface JobFormRequest {
   currency: Currency | null;
   vacancies: number;
   applicationDeadline: string | null;
+  applyMethod: ApplyMethod;
+  externalApplyUrl: string | null;
   locations: JobLocationRequest[];
   skills: JobSkillRequest[];
   benefits: JobBenefitRequest[];

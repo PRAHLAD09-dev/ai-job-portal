@@ -56,7 +56,7 @@ export const updateCompanyFormSchema = createCompanyFormSchema.omit({
 });
 export type UpdateCompanyFormValues = z.infer<typeof updateCompanyFormSchema>;
 
-/** Mirrors CompanyLocationRequest validation exactly. */
+/** Mirrors CompanyLocationRequest validation exactly, including the DAY11 lat/long range checks. */
 export const companyLocationFormSchema = z.object({
   addressLine: z.string().min(1, "Address line is required").max(255),
   city: z.string().min(1, "City is required").max(100),
@@ -64,6 +64,18 @@ export const companyLocationFormSchema = z.object({
   country: z.string().min(1, "Country is required").max(100),
   postalCode: z.string().max(20).optional().or(z.literal("")),
   headquarters: z.boolean(),
+  latitude: z
+    .number()
+    .min(-90, "Latitude must be between -90 and 90")
+    .max(90, "Latitude must be between -90 and 90")
+    .nullable()
+    .optional(),
+  longitude: z
+    .number()
+    .min(-180, "Longitude must be between -180 and 180")
+    .max(180, "Longitude must be between -180 and 180")
+    .nullable()
+    .optional(),
 });
 export type CompanyLocationFormValues = z.infer<typeof companyLocationFormSchema>;
 

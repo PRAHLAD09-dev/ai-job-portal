@@ -23,6 +23,14 @@ export type RequirementType = "QUALIFICATION" | "RESPONSIBILITY" | "NICE_TO_HAVE
 
 export type RequiredProficiency = "BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "EXPERT";
 
+/**
+ * DAY11/DAY07 "Apply Methods": how a candidate applies for this job.
+ * EASY_APPLY — in-app form, candidate picks a resume.
+ * QUICK_APPLY — in-app, no resume picker; candidate's active resume is used automatically.
+ * EXTERNAL_APPLY — no in-app application; candidate is redirected to externalApplyUrl.
+ */
+export type ApplyMethod = "EASY_APPLY" | "QUICK_APPLY" | "EXTERNAL_APPLY";
+
 export interface JobCategoryResponse {
   id: string;
   name: string;
@@ -76,6 +84,8 @@ export interface JobResponse {
   currency: Currency | null;
   vacancies: number;
   applicationDeadline: string | null;
+  applyMethod: ApplyMethod;
+  externalApplyUrl: string | null;
   featured: boolean;
   viewCount: number;
   publishedAt: string | null;
@@ -103,6 +113,7 @@ export interface JobSummaryResponse {
   salaryType: SalaryType | null;
   currency: Currency | null;
   featured: boolean;
+  applyMethod: ApplyMethod;
   cities: string[];
   publishedAt: string | null;
 }
@@ -128,6 +139,13 @@ export interface SavedJobResponse {
   id: string;
   job: JobSummaryResponse;
   savedAt: string;
+}
+
+/** DAY11 "Saved Job Statistics" — GET /jobs/me/saved-statistics, backs the recruiter dashboard. */
+export interface JobSavedCountResponse {
+  jobId: string;
+  jobTitle: string;
+  savedCount: number;
 }
 
 export type JobAlertFrequency = "INSTANT" | "DAILY" | "WEEKLY";

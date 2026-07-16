@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { FileText, Pencil, Search, Send } from "lucide-react";
+import { Eye, FileText, Pencil, Search, Send, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { useResumesList } from "@/features/profile/hooks/useResumes";
 import { useSavedJobsList } from "@/features/jobs/hooks/useSavedJobs";
 import { useFeaturedJobs } from "@/features/jobs/hooks/useJobs";
 import { useMyApplications } from "@/features/applications/hooks/useApplications";
+import { useLatestResumeAnalysis } from "@/features/ai/hooks/useAi";
 import { JobCard } from "@/features/jobs/components/JobCard";
 import { ApplicationCard } from "@/features/applications/components/ApplicationCard";
 
@@ -18,10 +19,16 @@ export default function CandidateDashboardPage() {
   const { user } = useAuth();
   const { data: resumes, isLoading: isLoadingResumes } = useResumesList();
   const { data: savedJobs } = useSavedJobsList({ page: 0, size: 100 });
-  const { data: recentApplications, isLoading: isLoadingApplications } = useMyApplications({ page: 0, size: 3 });
+  // Fetched once at a larger page size: powers both the "recent applications" list (first 3)
+  // and the Applications / Viewed Applications stat cards, without a second network call.
+  const { data: applications, isLoading: isLoadingApplications } = useMyApplications({ page: 0, size: 100 });
   const { data: featuredJobs, isLoading: isLoadingFeatured } = useFeaturedJobs();
+  // "AI Match" widget — latest ATS/resume analysis score, if the candidate has run one yet.
+  const { data: resumeAnalysis } = useLatestResumeAnalysis();
 
   const activeResumeCount = resumes?.filter((r) => r.status === "ACTIVE").length ?? 0;
+  const recentApplications = applications?.content.slice(0, 3) ?? [];
+  const viewedApplicationsCount = applications?.content.filter((a) => a.viewed).length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -32,7 +39,7 @@ export default function CandidateDashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <ProfileCompletionCard />
 
         <Card>
@@ -57,9 +64,35 @@ export default function CandidateDashboardPage() {
 
         <Card>
           <p className="text-sm font-medium text-[hsl(var(--muted))]">Applications</p>
-          <p className="mt-2 text-2xl font-semibold">{recentApplications?.totalElements ?? 0}</p>
+          <p className="mt-2 text-2xl font-semibold">{applications?.totalElements ?? 0}</p>
           <Link to={ROUTES.CANDIDATE_APPLICATIONS} className="mt-2 inline-block text-xs text-primary-600 hover:underline">
             View applications →
+          </Link>
+        </Card>
+
+        <Card>
+          <p className="flex items-center gap-1 text-sm font-medium text-[hsl(var(--muted))]">
+            <Eye className="h-3.5 w-3.5" /> Viewed by Recruiters
+          </p>
+          {isLoadingApplications ? (
+            <Skeleton className="mt-2 h-8 w-16" />
+          ) : (
+            <p className="mt-2 text-2xl font-semibold">{viewedApplicationsCount}</p>
+          )}
+          <p className="mt-2 text-xs text-[hsl(var(--muted))]">of {applications?.totalElements ?? 0} applications</p>
+        </Card>
+
+        <Card>
+          <p className="flex items-center gap-1 text-sm font-medium text-[hsl(var(--muted))]">
+            <Sparkles className="h-3.5 w-3.5" /> AI Match
+          </p>
+          {resumeAnalysis ? (
+            <p className="mt-2 text-2xl font-semibold">{Math.round(resumeAnalysis.atsScore)}%</p>
+          ) : (
+            <p className="mt-2 text-sm text-[hsl(var(--muted))]">Not analyzed yet</p>
+          )}
+          <Link to={ROUTES.CANDIDATE_AI} className="mt-2 inline-block text-xs text-primary-600 hover:underline">
+            {resumeAnalysis ? "View analysis →" : "Analyze resume →"}
           </Link>
         </Card>
       </div>
@@ -78,7 +111,7 @@ export default function CandidateDashboardPage() {
               <Skeleton className="h-20 w-full" />
             </div>
           )}
-          {!isLoadingApplications && recentApplications?.content.length === 0 && (
+          {!isLoadingApplications && recentApplications.length === 0 && (
             <EmptyState
               icon={<Send className="h-8 w-8" />}
               title="No applications yet"
@@ -88,7 +121,7 @@ export default function CandidateDashboardPage() {
             />
           )}
           <div className="space-y-3">
-            {recentApplications?.content.map((application) => (
+            {recentApplications.map((application) => (
               <ApplicationCard key={application.id} application={application} />
             ))}
           </div>

@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
+import { CompanyLocationMap } from "@/components/common/CompanyLocationMap";
 import { formatEnumLabel } from "@/utils/format";
 import { useCompanyPublicProfile } from "@/features/recruiter-company/hooks/useCompany";
 
@@ -139,6 +140,9 @@ export default function CompanyProfilePage() {
                 </p>
               </div>
             ))}
+          </div>
+          <div className="mt-4">
+            <CompanyLocationMap locations={company.locations} />
           </div>
         </Card>
       )}

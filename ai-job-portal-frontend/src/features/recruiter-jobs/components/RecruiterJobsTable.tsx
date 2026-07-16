@@ -34,6 +34,7 @@ export function RecruiterJobsTable({ jobs }: { jobs: JobSummaryResponse[] }) {
             <th className="px-4 py-3 font-medium">Type</th>
             <th className="px-4 py-3 font-medium">Work mode</th>
             <th className="px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3 font-medium">Apply method</th>
             <th className="px-4 py-3 font-medium">Featured</th>
             <th className="px-4 py-3 font-medium text-right">Actions</th>
           </tr>
@@ -47,6 +48,7 @@ export function RecruiterJobsTable({ jobs }: { jobs: JobSummaryResponse[] }) {
               <td className="px-4 py-3">
                 <JobStatusBadge status={job.status} />
               </td>
+              <td className="px-4 py-3 text-[hsl(var(--muted))]">{formatEnumLabel(job.applyMethod)}</td>
               <td className="px-4 py-3 text-[hsl(var(--muted))]">{job.featured ? "Yes" : "—"}</td>
               <td className="relative px-4 py-3 text-right">
                 <Button

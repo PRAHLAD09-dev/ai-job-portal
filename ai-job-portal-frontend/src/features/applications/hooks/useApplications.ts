@@ -30,6 +30,16 @@ export function useApplicationTimeline(applicationId: string | undefined) {
   });
 }
 
+/** DAY11 "Apply Methods": fetched before rendering the Apply button so EXTERNAL_APPLY jobs redirect instead of opening the in-app form. */
+export function useApplyInfo(jobId: string | undefined) {
+  return useQuery({
+    queryKey: ["applications", "apply-info", jobId],
+    queryFn: () => applicationService.getApplyInfo(jobId as string).then((res) => res.data),
+    enabled: !!jobId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useApplyToJob() {
   const queryClient = useQueryClient();
   return useMutation({

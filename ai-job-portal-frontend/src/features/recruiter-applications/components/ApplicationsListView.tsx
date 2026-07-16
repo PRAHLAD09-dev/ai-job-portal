@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
+import { ViewedBadge } from "@/components/common/ViewedBadge";
 import { Pagination } from "@/components/common/Pagination";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { formatEnumLabel } from "@/utils/format";
@@ -108,6 +109,7 @@ export function ApplicationsListView({ jobs, onSelectApplication }: Applications
                 <th className="px-4 py-3 font-medium">Job</th>
                 <th className="px-4 py-3 font-medium">Applied</th>
                 <th className="px-4 py-3 font-medium">Status</th>
+                <th className="px-4 py-3 font-medium">Viewed</th>
               </tr>
             </thead>
             <tbody>
@@ -124,6 +126,9 @@ export function ApplicationsListView({ jobs, onSelectApplication }: Applications
                   </td>
                   <td className="px-4 py-3">
                     <ApplicationStatusBadge status={application.status} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <ViewedBadge viewed={application.viewed} />
                   </td>
                 </tr>
               ))}

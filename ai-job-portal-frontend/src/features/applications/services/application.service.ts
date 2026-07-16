@@ -3,6 +3,7 @@ import type { ApiResponse, PageResponse } from "@/types/api";
 import type {
   ApplicationResponse,
   ApplicationSummaryResponse,
+  ApplyInfoResponse,
   CreateApplicationRequest,
   TimelineResponse,
 } from "@/features/applications/types";
@@ -11,6 +12,10 @@ import type {
 export const applicationService = {
   apply: (payload: CreateApplicationRequest) =>
     apiClient.post<ApiResponse<ApplicationResponse>>("/applications", payload).then((res) => res.data),
+
+  /** DAY11 "Apply Methods": call before rendering the Apply button/dialog. */
+  getApplyInfo: (jobId: string) =>
+    apiClient.get<ApiResponse<ApplyInfoResponse>>(`/applications/apply-info/${jobId}`).then((res) => res.data),
 
   withdraw: (applicationId: string) =>
     apiClient

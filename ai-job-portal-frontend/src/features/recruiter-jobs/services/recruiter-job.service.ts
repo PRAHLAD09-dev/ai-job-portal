@@ -1,6 +1,6 @@
 import { apiClient } from "@/services/api-client";
 import type { ApiResponse, PageResponse } from "@/types/api";
-import type { JobResponse, JobSummaryResponse } from "@/features/jobs/types";
+import type { JobResponse, JobSavedCountResponse, JobSummaryResponse } from "@/features/jobs/types";
 import type { JobFormRequest, JobStatisticsResponse } from "@/features/recruiter-jobs/types";
 
 /** Maps 1:1 to job-service JobController recruiter management endpoints (/jobs/me/**). */
@@ -35,4 +35,10 @@ export const recruiterJobService = {
 
   getMyCompanyStatistics: () =>
     apiClient.get<ApiResponse<JobStatisticsResponse>>("/jobs/me/statistics").then((res) => res.data),
+
+  /** DAY11 "Saved Job Statistics" — how many candidates bookmarked each of the recruiter's jobs. */
+  getMyCompanySavedStatistics: () =>
+    apiClient
+      .get<ApiResponse<JobSavedCountResponse[]>>("/jobs/me/saved-statistics")
+      .then((res) => res.data),
 };

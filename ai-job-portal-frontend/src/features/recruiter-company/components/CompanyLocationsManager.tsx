@@ -10,6 +10,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EmptyState } from "@/components/common/EmptyState";
+import { CompanyLocationMap } from "@/components/common/CompanyLocationMap";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   companyLocationFormSchema,
@@ -50,6 +51,8 @@ export function CompanyLocationsManager({ enabled }: { enabled: boolean }) {
       country: values.country,
       postalCode: values.postalCode || null,
       headquarters: values.headquarters,
+      latitude: values.latitude ?? null,
+      longitude: values.longitude ?? null,
     };
     if (editing) {
       updateLocation.mutate(
@@ -128,6 +131,12 @@ export function CompanyLocationsManager({ enabled }: { enabled: boolean }) {
         ))}
       </div>
 
+      {locations && locations.some((l) => l.latitude != null && l.longitude != null) && (
+        <div className="mt-4">
+          <CompanyLocationMap locations={locations} />
+        </div>
+      )}
+
       {formOpen && (
         <LocationFormModal
           open={formOpen}
@@ -169,6 +178,7 @@ function LocationFormModal({
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors },
   } = useForm<CompanyLocationFormValues>({
     resolver: zodResolver(companyLocationFormSchema),
@@ -180,9 +190,23 @@ function LocationFormModal({
           country: location.country,
           postalCode: location.postalCode ?? "",
           headquarters: location.headquarters,
+          latitude: location.latitude,
+          longitude: location.longitude,
         }
-      : { addressLine: "", city: "", state: "", country: "", postalCode: "", headquarters: false },
+      : {
+          addressLine: "",
+          city: "",
+          state: "",
+          country: "",
+          postalCode: "",
+          headquarters: false,
+          latitude: null,
+          longitude: null,
+        },
   });
+
+  const watchedLat = watch("latitude");
+  const watchedLng = watch("longitude");
 
   return (
     <Modal open={open} onOpenChange={onOpenChange} title={location ? "Edit location" : "Add location"}>
@@ -206,6 +230,61 @@ function LocationFormModal({
             <Input id="postalCode" {...register("postalCode")} />
           </FormField>
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            label="Latitude"
+            htmlFor="latitude"
+            error={errors.latitude?.message}
+          >
+            <Input
+              id="latitude"
+              type="number"
+              step="any"
+              placeholder="e.g. 37.774900"
+              {...register("latitude", { setValueAs: (v) => (v === "" ? null : Number(v)) })}
+            />
+          </FormField>
+          <FormField
+            label="Longitude"
+            htmlFor="longitude"
+            error={errors.longitude?.message}
+          >
+            <Input
+              id="longitude"
+              type="number"
+              step="any"
+              placeholder="e.g. -122.419400"
+              {...register("longitude", { setValueAs: (v) => (v === "" ? null : Number(v)) })}
+            />
+          </FormField>
+        </div>
+        <p className="text-xs text-[hsl(var(--muted))]">
+          Optional — add coordinates to show this location on the map. Look them up on{" "}
+          <a
+            href="https://www.openstreetmap.org"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary-600 hover:underline"
+          >
+            OpenStreetMap
+          </a>
+          .
+        </p>
+        {watchedLat != null && watchedLng != null && (
+          <CompanyLocationMap
+            locations={[
+              {
+                id: "preview",
+                city: watch("city") || "Preview",
+                country: watch("country") || "",
+                latitude: watchedLat,
+                longitude: watchedLng,
+                headquarters: watch("headquarters"),
+              },
+            ]}
+            height={200}
+          />
+        )}
         <label className="flex items-center gap-2 text-sm">
           <Checkbox {...register("headquarters")} />
           This is our headquarters
