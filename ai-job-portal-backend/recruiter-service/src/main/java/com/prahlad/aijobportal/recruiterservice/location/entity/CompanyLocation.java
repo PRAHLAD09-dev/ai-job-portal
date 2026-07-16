@@ -16,6 +16,8 @@ import lombok.Setter;
 import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
+import java.math.BigDecimal;
+
 /**
  * A single office/branch location belonging to a {@link Company}. A
  * company may have multiple locations; exactly one may be marked as the
@@ -53,4 +55,10 @@ public class CompanyLocation extends BaseEntity {
     @Column(name = "is_headquarters", nullable = false)
     @Builder.Default
     private boolean headquarters = false;
+
+    @Column(name = "latitude", precision = 9, scale = 6)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 9, scale = 6)
+    private BigDecimal longitude;
 }

@@ -28,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -54,11 +55,28 @@ public class RecruiterApplicationServiceImpl implements RecruiterApplicationServ
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ApplicationResponse getApplicationDetail(UUID recruiterUserId, String bearerToken, UUID applicationId) {
         UUID companyId = resolveCompanyId(bearerToken);
         JobApplication application = applicationOwnershipGuard.getOwnedApplicationOrThrow(applicationId, companyId);
+        markViewedIfNeeded(application, recruiterUserId);
         return applicationMapper.toResponse(application);
+    }
+
+    /**
+     * DAY11 "Viewed by Recruiter": the first time any recruiter opens
+     * this application's detail, stamp viewed/viewedAt/viewedBy. A
+     * simple {@code if (!viewed)} guard keeps this idempotent — later
+     * opens (by the same or a different recruiter at the company)
+     * never overwrite the original viewedAt/viewedBy.
+     */
+    private void markViewedIfNeeded(JobApplication application, UUID recruiterUserId) {
+        if (!application.isViewed()) {
+            application.setViewed(true);
+            application.setViewedAt(Instant.now());
+            application.setViewedBy(recruiterUserId);
+            applicationRepository.save(application);
+        }
     }
 
     @Override

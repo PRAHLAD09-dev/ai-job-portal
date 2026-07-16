@@ -4,6 +4,7 @@ import com.prahlad.aijobportal.jobservice.job.dto.request.CreateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.request.JobSearchCriteria;
 import com.prahlad.aijobportal.jobservice.job.dto.request.UpdateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobResponse;
+import com.prahlad.aijobportal.jobservice.job.dto.response.JobSavedCountResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobStatisticsResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobSummaryResponse;
 import com.prahlad.aijobportal.jobservice.job.enums.ExperienceLevel;
@@ -153,6 +154,17 @@ public class JobController {
             @AuthenticationPrincipal AuthenticatedUser principal,
             @RequestHeader(CommonConstants.AUTHORIZATION_HEADER) String bearerToken) {
         JobStatisticsResponse response = jobService.getMyCompanyStatistics(principal.userId(), bearerToken);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/me/saved-statistics")
+    @Operation(summary = "Get per-job saved (bookmark) counts for the authenticated recruiter's company",
+            description = "DAY11 Recruiter Dashboard 'Saved Job Statistics'. Backs Recruiter Service's dashboard "
+                    + "aggregation via Feign, forwarding the recruiter's own bearer token.")
+    public ResponseEntity<ApiResponse<List<JobSavedCountResponse>>> getMyCompanySavedJobStatistics(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @RequestHeader(CommonConstants.AUTHORIZATION_HEADER) String bearerToken) {
+        List<JobSavedCountResponse> response = jobService.getMyCompanySavedJobStatistics(principal.userId(), bearerToken);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

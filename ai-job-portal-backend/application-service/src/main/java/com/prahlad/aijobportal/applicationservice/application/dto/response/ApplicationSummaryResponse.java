@@ -19,6 +19,7 @@ public record ApplicationSummaryResponse(
         String companyName,
         ApplicationStatus status,
         Instant appliedAt,
-        Instant interviewDate
+        Instant interviewDate,
+        boolean viewed
 ) {
 }

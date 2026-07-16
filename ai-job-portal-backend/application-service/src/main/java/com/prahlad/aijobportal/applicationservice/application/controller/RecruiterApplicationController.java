@@ -75,7 +75,9 @@ public class RecruiterApplicationController {
     }
 
     @GetMapping("/{applicationId}")
-    @Operation(summary = "Get a company application's detail")
+    @Operation(summary = "Get a company application's detail",
+            description = "Marks the application as viewed (viewed=true, viewedAt, viewedBy) the first time any "
+                    + "recruiter at the company opens it. Subsequent opens do not overwrite the original viewed stamp.")
     public ResponseEntity<ApiResponse<ApplicationResponse>> getApplicationDetail(
             @AuthenticationPrincipal AuthenticatedUser principal,
             @RequestHeader(CommonConstants.AUTHORIZATION_HEADER) String bearerToken,

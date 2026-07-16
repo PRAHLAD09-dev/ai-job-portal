@@ -3,6 +3,7 @@ package com.prahlad.aijobportal.jobservice.job.entity;
 import com.prahlad.aijobportal.jobservice.benefit.entity.JobBenefit;
 import com.prahlad.aijobportal.jobservice.category.entity.JobCategory;
 import com.prahlad.aijobportal.jobservice.config.BaseEntity;
+import com.prahlad.aijobportal.jobservice.job.enums.ApplyMethod;
 import com.prahlad.aijobportal.jobservice.job.enums.Currency;
 import com.prahlad.aijobportal.jobservice.job.enums.ExperienceLevel;
 import com.prahlad.aijobportal.jobservice.job.enums.JobStatus;
@@ -122,6 +123,14 @@ public class Job extends BaseEntity {
 
     @Column(name = "application_deadline")
     private Instant applicationDeadline;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "apply_method", nullable = false, length = 20)
+    @Builder.Default
+    private ApplyMethod applyMethod = ApplyMethod.EASY_APPLY;
+
+    @Column(name = "external_apply_url", length = 1000)
+    private String externalApplyUrl;
 
     @Column(name = "featured", nullable = false)
     @Builder.Default

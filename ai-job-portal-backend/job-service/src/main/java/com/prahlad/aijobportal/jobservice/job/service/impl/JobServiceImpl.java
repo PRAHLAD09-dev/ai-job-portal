@@ -15,14 +15,17 @@ import com.prahlad.aijobportal.jobservice.job.dto.request.CreateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.request.JobSearchCriteria;
 import com.prahlad.aijobportal.jobservice.job.dto.request.UpdateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobResponse;
+import com.prahlad.aijobportal.jobservice.job.dto.response.JobSavedCountResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobStatisticsResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobSummaryResponse;
 import com.prahlad.aijobportal.jobservice.job.entity.Job;
+import com.prahlad.aijobportal.jobservice.job.enums.ApplyMethod;
 import com.prahlad.aijobportal.jobservice.job.enums.JobStatus;
 import com.prahlad.aijobportal.jobservice.job.exception.InvalidJobStateException;
 import com.prahlad.aijobportal.jobservice.job.exception.JobNotFoundException;
 import com.prahlad.aijobportal.jobservice.job.mapper.JobMapper;
 import com.prahlad.aijobportal.jobservice.job.repository.JobRepository;
+import com.prahlad.aijobportal.jobservice.job.repository.SavedJobRepository;
 import com.prahlad.aijobportal.jobservice.job.service.JobOwnershipGuard;
 import com.prahlad.aijobportal.jobservice.job.service.JobService;
 import com.prahlad.aijobportal.jobservice.job.service.RecruiterLookupService;
@@ -62,6 +65,7 @@ public class JobServiceImpl implements JobService {
     private static final int SIMILAR_LIMIT = 6;
 
     private final JobRepository jobRepository;
+    private final SavedJobRepository savedJobRepository;
     private final JobMapper jobMapper;
     private final JobSkillMapper jobSkillMapper;
     private final JobBenefitMapper jobBenefitMapper;
@@ -100,6 +104,9 @@ public class JobServiceImpl implements JobService {
                 .currency(request.currency())
                 .vacancies(request.vacancies() > 0 ? request.vacancies() : 1)
                 .applicationDeadline(request.applicationDeadline())
+                .applyMethod(request.applyMethod())
+                .externalApplyUrl(request.applyMethod() == ApplyMethod.EXTERNAL_APPLY
+                        ? request.externalApplyUrl() : null)
                 .build();
 
         attachChildren(job, request.locations(), request.skills(), request.benefits(), request.requirements());
@@ -136,6 +143,9 @@ public class JobServiceImpl implements JobService {
         job.setCurrency(request.currency());
         job.setVacancies(request.vacancies() > 0 ? request.vacancies() : 1);
         job.setApplicationDeadline(request.applicationDeadline());
+        job.setApplyMethod(request.applyMethod());
+        job.setExternalApplyUrl(request.applyMethod() == ApplyMethod.EXTERNAL_APPLY
+                ? request.externalApplyUrl() : null);
 
         job.getLocations().clear();
         job.getSkills().clear();
@@ -326,6 +336,15 @@ public class JobServiceImpl implements JobService {
         long draft = jobRepository.countByCompanyIdAndStatus(companyId, JobStatus.DRAFT);
 
         return new JobStatisticsResponse(companyId, total, active, closed, draft);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<JobSavedCountResponse> getMyCompanySavedJobStatistics(UUID userId, String bearerToken) {
+        RecruiterSummaryResponse recruiter = resolveCurrentRecruiter(bearerToken);
+        return savedJobRepository.countSavedByCompanyGroupedByJob(recruiter.companyId()).stream()
+                .map(row -> new JobSavedCountResponse(row.getJobId(), row.getJobTitle(), row.getSavedCount()))
+                .toList();
     }
 
     @Override

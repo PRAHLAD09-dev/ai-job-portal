@@ -108,6 +108,6 @@ class SavedJobServiceImplTest {
     private JobSummaryResponse mockSummary() {
         return new JobSummaryResponse(jobId, "Acme", null, "Engineering", "Backend Engineer",
                 "backend-engineer", null, null, null, null, null, null, null, null,
-                false, java.util.List.of(), null);
+                false, com.prahlad.aijobportal.jobservice.job.enums.ApplyMethod.EASY_APPLY, java.util.List.of(), null);
     }
 }

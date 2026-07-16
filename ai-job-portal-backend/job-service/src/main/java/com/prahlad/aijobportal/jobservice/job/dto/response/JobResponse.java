@@ -2,6 +2,7 @@ package com.prahlad.aijobportal.jobservice.job.dto.response;
 
 import com.prahlad.aijobportal.jobservice.benefit.dto.response.JobBenefitResponse;
 import com.prahlad.aijobportal.jobservice.category.dto.response.JobCategoryResponse;
+import com.prahlad.aijobportal.jobservice.job.enums.ApplyMethod;
 import com.prahlad.aijobportal.jobservice.job.enums.Currency;
 import com.prahlad.aijobportal.jobservice.job.enums.ExperienceLevel;
 import com.prahlad.aijobportal.jobservice.job.enums.JobStatus;
@@ -40,6 +41,8 @@ public record JobResponse(
         Currency currency,
         int vacancies,
         Instant applicationDeadline,
+        ApplyMethod applyMethod,
+        String externalApplyUrl,
         boolean featured,
         long viewCount,
         Instant publishedAt,

@@ -26,6 +26,9 @@ public record ApplicationResponse(
         Instant interviewDate,
         String notes,
         Instant withdrawnAt,
+        boolean viewed,
+        Instant viewedAt,
+        UUID viewedBy,
         Instant createdAt,
         Instant updatedAt
 ) {

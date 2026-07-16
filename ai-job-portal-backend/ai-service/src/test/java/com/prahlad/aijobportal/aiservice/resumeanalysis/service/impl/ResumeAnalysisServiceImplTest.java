@@ -53,11 +53,11 @@ class ResumeAnalysisServiceImplTest {
 
         candidateId = UUID.randomUUID();
         request = new AnalyzeResumeRequest("https://cloudinary.com/resume.pdf");
-        when(resumeTextExtractionService.extractText(anyString())).thenReturn("5 years Java experience");
     }
 
     @Test
     void analyze_createsNewAnalysis_whenNoDuplicateExists() {
+        when(resumeTextExtractionService.extractText(anyString())).thenReturn("5 years Java experience");
         when(resumeAnalysisRepository.findTopByCandidateIdAndResumeTextHashOrderByCreatedAtDesc(any(), anyString()))
                 .thenReturn(Optional.empty());
 
@@ -110,6 +110,7 @@ class ResumeAnalysisServiceImplTest {
                 .build();
         existing.setCreatedAt(Instant.now());
 
+        when(resumeTextExtractionService.extractText(anyString())).thenReturn("5 years Java experience");
         when(resumeAnalysisRepository.findTopByCandidateIdAndResumeTextHashOrderByCreatedAtDesc(any(), anyString()))
                 .thenReturn(Optional.of(existing));
 

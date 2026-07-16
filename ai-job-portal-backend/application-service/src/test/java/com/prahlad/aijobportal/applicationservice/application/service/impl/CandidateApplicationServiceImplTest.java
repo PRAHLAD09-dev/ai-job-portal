@@ -62,7 +62,7 @@ class CandidateApplicationServiceImplTest {
         companyId = UUID.randomUUID();
         bearerToken = "Bearer test-token";
 
-        job = new JobSummaryResponse(jobId, companyId, "Acme Inc", "Backend Engineer", "PUBLISHED", null);
+        job = new JobSummaryResponse(jobId, companyId, "Acme Inc", "Backend Engineer", "PUBLISHED", null, "EASY_APPLY", null);
         candidate = new CandidateProfileSummaryResponse(candidateId, candidateUserId, "jane@example.com", "Jane Doe",
                 List.of(new CandidateProfileSummaryResponse.ResumeSummaryResponse(UUID.randomUUID(), "resume.pdf",
                         "https://cdn.example.com/resume.pdf", ResumeStatus.ACTIVE)));
@@ -85,7 +85,7 @@ class CandidateApplicationServiceImplTest {
 
     @Test
     void apply_throws_whenJobNotPublished() {
-        JobSummaryResponse closedJob = new JobSummaryResponse(jobId, companyId, "Acme Inc", "Backend Engineer", "DRAFT", null);
+        JobSummaryResponse closedJob = new JobSummaryResponse(jobId, companyId, "Acme Inc", "Backend Engineer", "DRAFT", null, "EASY_APPLY", null);
         when(jobLookupService.fetchJob(jobId)).thenReturn(closedJob);
 
         CreateApplicationRequest request = new CreateApplicationRequest(jobId, null, null);
@@ -97,7 +97,7 @@ class CandidateApplicationServiceImplTest {
     @Test
     void apply_throws_whenDeadlinePassed() {
         JobSummaryResponse expiredJob = new JobSummaryResponse(jobId, companyId, "Acme Inc", "Backend Engineer",
-                "PUBLISHED", Instant.now().minusSeconds(3600));
+                "PUBLISHED", Instant.now().minusSeconds(3600), "EASY_APPLY", null);
         when(jobLookupService.fetchJob(jobId)).thenReturn(expiredJob);
 
         CreateApplicationRequest request = new CreateApplicationRequest(jobId, null, null);

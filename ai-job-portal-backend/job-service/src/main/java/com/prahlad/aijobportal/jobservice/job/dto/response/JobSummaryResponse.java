@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.jobservice.job.dto.response;
 
+import com.prahlad.aijobportal.jobservice.job.enums.ApplyMethod;
 import com.prahlad.aijobportal.jobservice.job.enums.Currency;
 import com.prahlad.aijobportal.jobservice.job.enums.ExperienceLevel;
 import com.prahlad.aijobportal.jobservice.job.enums.JobStatus;
@@ -34,6 +35,7 @@ public record JobSummaryResponse(
         SalaryType salaryType,
         Currency currency,
         boolean featured,
+        ApplyMethod applyMethod,
         List<String> cities,
         Instant publishedAt
 ) {

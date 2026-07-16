@@ -17,6 +17,8 @@ public record JobSummaryResponse(
         String companyName,
         String title,
         String status,
-        Instant applicationDeadline
+        Instant applicationDeadline,
+        String applyMethod,
+        String externalApplyUrl
 ) {
 }

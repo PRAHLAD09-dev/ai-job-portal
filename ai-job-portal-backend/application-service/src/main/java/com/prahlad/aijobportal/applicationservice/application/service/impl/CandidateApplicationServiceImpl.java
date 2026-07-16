@@ -3,10 +3,12 @@ package com.prahlad.aijobportal.applicationservice.application.service.impl;
 import com.prahlad.aijobportal.applicationservice.application.dto.request.CreateApplicationRequest;
 import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplicationResponse;
 import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplicationSummaryResponse;
+import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplyInfoResponse;
 import com.prahlad.aijobportal.applicationservice.application.entity.JobApplication;
 import com.prahlad.aijobportal.applicationservice.application.enums.ApplicationStatus;
 import com.prahlad.aijobportal.applicationservice.application.exception.ApplicationNotFoundException;
 import com.prahlad.aijobportal.applicationservice.application.exception.DuplicateApplicationException;
+import com.prahlad.aijobportal.applicationservice.application.exception.ExternalApplyNotAllowedException;
 import com.prahlad.aijobportal.applicationservice.application.exception.JobClosedException;
 import com.prahlad.aijobportal.applicationservice.application.exception.ResumeNotFoundException;
 import com.prahlad.aijobportal.applicationservice.application.mapper.ApplicationMapper;
@@ -58,8 +60,20 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
         JobSummaryResponse job = jobLookupService.fetchJob(request.jobId());
         validateJobIsOpen(job);
 
+        // DAY11 "Apply Methods": EXTERNAL_APPLY jobs never get an
+        // in-app application record — the candidate must go through
+        // the job's externalApplyUrl instead (see getApplyInfo()).
+        if ("EXTERNAL_APPLY".equals(job.applyMethod())) {
+            throw new ExternalApplyNotAllowedException();
+        }
+
         CandidateProfileSummaryResponse candidate = candidateLookupService.fetchCurrentCandidate(bearerToken);
-        String resumeUrl = resolveResumeUrl(candidate, request.resumeId());
+
+        // QUICK_APPLY always auto-selects the candidate's active resume,
+        // ignoring any resumeId the client sent, so the candidate is
+        // never shown a resume picker for these jobs.
+        UUID effectiveResumeId = "QUICK_APPLY".equals(job.applyMethod()) ? null : request.resumeId();
+        String resumeUrl = resolveResumeUrl(candidate, effectiveResumeId);
 
         if (applicationRepository.existsByJobIdAndCandidateId(request.jobId(), candidate.id())) {
             throw new DuplicateApplicationException();
@@ -129,6 +143,12 @@ public class CandidateApplicationServiceImpl implements CandidateApplicationServ
         Page<ApplicationSummaryResponse> page = applicationRepository.findByCandidateUserId(candidateUserId, pageable)
                 .map(applicationMapper::toSummaryResponse);
         return PageResponse.from(page);
+    }
+
+    @Override
+    public ApplyInfoResponse getApplyInfo(UUID jobId) {
+        JobSummaryResponse job = jobLookupService.fetchJob(jobId);
+        return new ApplyInfoResponse(jobId, job.applyMethod(), job.externalApplyUrl());
     }
 
     private JobApplication getOwnedByCandidateOrThrow(UUID candidateUserId, UUID applicationId) {

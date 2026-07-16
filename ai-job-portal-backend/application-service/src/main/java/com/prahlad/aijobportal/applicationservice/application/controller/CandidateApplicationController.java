@@ -3,6 +3,7 @@ package com.prahlad.aijobportal.applicationservice.application.controller;
 import com.prahlad.aijobportal.applicationservice.application.dto.request.CreateApplicationRequest;
 import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplicationResponse;
 import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplicationSummaryResponse;
+import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplyInfoResponse;
 import com.prahlad.aijobportal.applicationservice.application.service.CandidateApplicationService;
 import com.prahlad.aijobportal.applicationservice.security.principal.AuthenticatedUser;
 import com.prahlad.aijobportal.applicationservice.timeline.dto.response.TimelineResponse;
@@ -49,7 +50,10 @@ public class CandidateApplicationController {
     private final ApplicationTimelineService applicationTimelineService;
 
     @PostMapping
-    @Operation(summary = "Apply for a job")
+    @Operation(summary = "Apply for a job",
+            description = "Only for EASY_APPLY / QUICK_APPLY jobs. For EXTERNAL_APPLY jobs this returns 409 "
+                    + "EXTERNAL_APPLY_NOT_ALLOWED — call GET /applications/apply-info/{jobId} first to check the "
+                    + "job's apply method before submitting.")
     public ResponseEntity<ApiResponse<ApplicationResponse>> apply(
             @AuthenticationPrincipal AuthenticatedUser principal,
             @RequestHeader(CommonConstants.AUTHORIZATION_HEADER) String bearerToken,
@@ -57,6 +61,15 @@ public class CandidateApplicationController {
         ApplicationResponse response = candidateApplicationService.apply(principal.userId(), bearerToken, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Application submitted successfully", response));
+    }
+
+    @GetMapping("/apply-info/{jobId}")
+    @Operation(summary = "Get a job's apply method",
+            description = "Returns EASY_APPLY, QUICK_APPLY, or EXTERNAL_APPLY (with externalApplyUrl). The "
+                    + "frontend should call this before rendering the Apply button so EXTERNAL_APPLY jobs open "
+                    + "the external URL directly instead of the in-app apply form.")
+    public ResponseEntity<ApiResponse<ApplyInfoResponse>> getApplyInfo(@PathVariable java.util.UUID jobId) {
+        return ResponseEntity.ok(ApiResponse.success(candidateApplicationService.getApplyInfo(jobId)));
     }
 
     @PostMapping("/{applicationId}/withdraw")

@@ -1,6 +1,7 @@
 package com.prahlad.aijobportal.jobservice.job.dto.request;
 
 import com.prahlad.aijobportal.jobservice.benefit.dto.request.JobBenefitRequest;
+import com.prahlad.aijobportal.jobservice.job.enums.ApplyMethod;
 import com.prahlad.aijobportal.jobservice.job.enums.Currency;
 import com.prahlad.aijobportal.jobservice.job.enums.ExperienceLevel;
 import com.prahlad.aijobportal.jobservice.job.enums.JobType;
@@ -17,6 +18,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.hibernate.validator.constraints.URL;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -59,6 +61,13 @@ public record UpdateJobRequest(
         @Future(message = "Application deadline must be in the future")
         Instant applicationDeadline,
 
+        @NotNull(message = "Apply method is required")
+        ApplyMethod applyMethod,
+
+        @URL(message = "External apply URL must be a valid URL")
+        @Size(max = 1000, message = "External apply URL must not exceed 1000 characters")
+        String externalApplyUrl,
+
         @NotEmpty(message = "At least one location is required")
         @Valid
         List<JobLocationRequest> locations,
@@ -75,5 +84,11 @@ public record UpdateJobRequest(
     @AssertTrue(message = "Maximum salary must be greater than or equal to minimum salary")
     public boolean isSalaryRangeValid() {
         return minSalary == null || maxSalary == null || maxSalary.compareTo(minSalary) >= 0;
+    }
+
+    @AssertTrue(message = "External apply URL is required when apply method is EXTERNAL_APPLY")
+    public boolean isExternalApplyUrlValid() {
+        return applyMethod != ApplyMethod.EXTERNAL_APPLY
+                || (externalApplyUrl != null && !externalApplyUrl.isBlank());
     }
 }

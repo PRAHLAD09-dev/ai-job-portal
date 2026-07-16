@@ -3,6 +3,7 @@ package com.prahlad.aijobportal.applicationservice.application.service;
 import com.prahlad.aijobportal.applicationservice.application.dto.request.CreateApplicationRequest;
 import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplicationResponse;
 import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplicationSummaryResponse;
+import com.prahlad.aijobportal.applicationservice.application.dto.response.ApplyInfoResponse;
 import com.prahlad.aijobportal.common.response.PageResponse;
 import org.springframework.data.domain.Pageable;
 
@@ -17,4 +18,11 @@ public interface CandidateApplicationService {
     ApplicationResponse getApplicationDetail(UUID candidateUserId, UUID applicationId);
 
     PageResponse<ApplicationSummaryResponse> getMyApplications(UUID candidateUserId, Pageable pageable);
+
+    /**
+     * DAY11 "Apply Methods": lets the frontend check a job's apply
+     * method (and, for EXTERNAL_APPLY, the redirect URL) before
+     * deciding whether to show the in-app apply form.
+     */
+    ApplyInfoResponse getApplyInfo(UUID jobId);
 }

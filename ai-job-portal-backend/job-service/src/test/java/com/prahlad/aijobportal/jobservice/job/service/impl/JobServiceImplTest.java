@@ -7,6 +7,7 @@ import com.prahlad.aijobportal.jobservice.feign.dto.RecruiterSummaryResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.request.CreateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobResponse;
 import com.prahlad.aijobportal.jobservice.job.entity.Job;
+import com.prahlad.aijobportal.jobservice.job.enums.ApplyMethod;
 import com.prahlad.aijobportal.jobservice.job.enums.ExperienceLevel;
 import com.prahlad.aijobportal.jobservice.job.enums.JobStatus;
 import com.prahlad.aijobportal.jobservice.job.enums.JobType;
@@ -78,6 +79,7 @@ class JobServiceImplTest {
                 categoryId, "Backend Engineer", "Job description here",
                 JobType.FULL_TIME, ExperienceLevel.MID_LEVEL, WorkMode.REMOTE,
                 null, null, null, null, 1, null,
+                ApplyMethod.EASY_APPLY, null,
                 List.of(new JobLocationRequest("Bangalore", "Karnataka", "India")),
                 null, null, null
         );
@@ -128,6 +130,6 @@ class JobServiceImplTest {
         return new JobResponse(id, companyId, "Acme Inc", null, null, "Backend Engineer",
                 "backend-engineer", "Job description here", JobType.FULL_TIME, ExperienceLevel.MID_LEVEL,
                 WorkMode.REMOTE, JobStatus.DRAFT, null, null, null, null, 1, null,
-                false, 0L, null, List.of(), List.of(), List.of(), List.of(), null);
+                ApplyMethod.EASY_APPLY, null, false, 0L, null, List.of(), List.of(), List.of(), List.of(), null);
     }
 }

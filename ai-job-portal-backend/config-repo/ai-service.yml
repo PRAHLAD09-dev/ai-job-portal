@@ -42,7 +42,11 @@ app:
 
   # ---- Gemini API ---- (DECISIONS.md: "Provider-Independent Design")
   # No default api-key on purpose: fail fast at startup rather than
-  # silently call Gemini with an empty key.
+  # silently call Gemini with an empty key. max-output-tokens is 8192:
+  # 2048 was enough for early, smaller response schemas but was observed
+  # truncating mid-JSON on DAY10's richer ones (resume analysis
+  # extraction fields, skill gap priority order) - 8192 leaves
+  # comfortable margin.
   gemini:
     api-key: ${GEMINI_API_KEY}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}

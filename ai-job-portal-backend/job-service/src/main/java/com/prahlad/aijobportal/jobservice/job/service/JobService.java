@@ -4,6 +4,7 @@ import com.prahlad.aijobportal.jobservice.job.dto.request.CreateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.request.JobSearchCriteria;
 import com.prahlad.aijobportal.jobservice.job.dto.request.UpdateJobRequest;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobResponse;
+import com.prahlad.aijobportal.jobservice.job.dto.response.JobSavedCountResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobStatisticsResponse;
 import com.prahlad.aijobportal.jobservice.job.dto.response.JobSummaryResponse;
 import com.prahlad.aijobportal.common.response.PageResponse;
@@ -24,6 +25,12 @@ public interface JobService {
     JobResponse previewJob(UUID userId, String bearerToken, UUID jobId);
     PageResponse<JobSummaryResponse> getMyCompanyJobs(UUID userId, String bearerToken, Pageable pageable);
     JobStatisticsResponse getMyCompanyStatistics(UUID userId, String bearerToken);
+
+    /**
+     * DAY11 Recruiter Dashboard "Saved Job Statistics": per-job saved
+     * (bookmark) counts across the authenticated recruiter's company.
+     */
+    List<JobSavedCountResponse> getMyCompanySavedJobStatistics(UUID userId, String bearerToken);
 
     JobResponse getJobById(UUID jobId);
     JobResponse getJobBySlug(String slug);

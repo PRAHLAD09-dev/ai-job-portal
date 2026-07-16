@@ -110,4 +110,20 @@ public class JobApplication extends BaseEntity {
 
     @Column(name = "withdrawn_at")
     private Instant withdrawnAt;
+
+    /**
+     * DAY11 "Viewed by Recruiter" tracking. Set exactly once, the first
+     * time any recruiter at the owning company opens this application's
+     * detail view (see {@code RecruiterApplicationServiceImpl#getApplicationDetail}).
+     * {@code viewedBy} stores the Auth Service user id of that recruiter.
+     */
+    @Column(name = "viewed", nullable = false)
+    @Builder.Default
+    private boolean viewed = false;
+
+    @Column(name = "viewed_at")
+    private Instant viewedAt;
+
+    @Column(name = "viewed_by")
+    private UUID viewedBy;
 }
