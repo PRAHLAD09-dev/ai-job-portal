@@ -93,7 +93,13 @@ export function NotificationBell() {
               </div>
             )}
             {!isLoading && (!notifications || notifications.length === 0) && (
-              <p className="p-4 text-center text-sm text-[hsl(var(--muted))]">No data available.</p>
+              <div className="flex flex-col items-center gap-2 px-4 py-10 text-center">
+                <Bell className="h-8 w-8 text-[hsl(var(--muted))]" />
+                <p className="text-sm font-medium">You're all caught up</p>
+                <p className="text-xs text-[hsl(var(--muted))]">
+                  New notifications about jobs, applications, and AI results will show up here.
+                </p>
+              </div>
             )}
             {notifications?.map((notification) => (
               <div

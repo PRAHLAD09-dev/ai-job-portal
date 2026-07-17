@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/ui/form-field";
 import { loginSchema, type LoginFormValues } from "@/features/auth/schemas/auth.schema";
 import { useLogin } from "@/features/auth/hooks/useAuthMutations";
+import { GoogleAuthButton } from "@/features/auth/components/GoogleAuthButton";
 import { ROUTES } from "@/constants/routes";
 
 export default function LoginPage() {
@@ -41,6 +42,16 @@ export default function LoginPage() {
           Log In
         </Button>
       </form>
+
+      <div className="mt-6 flex items-center gap-3 text-xs text-[hsl(var(--muted))]">
+        <div className="h-px flex-1 bg-[hsl(var(--border-color))]" />
+        <span>or</span>
+        <div className="h-px flex-1 bg-[hsl(var(--border-color))]" />
+      </div>
+
+      <div className="mt-4">
+        <GoogleAuthButton role="CANDIDATE" />
+      </div>
 
       <p className="mt-6 text-center text-sm text-[hsl(var(--muted))]">
         Don't have an account?{" "}

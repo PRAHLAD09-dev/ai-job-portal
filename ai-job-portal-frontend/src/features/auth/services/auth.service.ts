@@ -4,6 +4,7 @@ import type { AuthResponse, UserResponse } from "@/types/auth";
 import type {
   ChangePasswordRequest,
   ForgotPasswordRequest,
+  GoogleAuthRequest,
   LoginRequest,
   RefreshTokenRequest,
   RegisterRequest,
@@ -26,6 +27,9 @@ export const authService = {
 
   login: (payload: LoginRequest) =>
     apiClient.post<ApiResponse<AuthResponse>>("/auth/login", payload).then((res) => res.data),
+
+  loginWithGoogle: (payload: GoogleAuthRequest) =>
+    apiClient.post<ApiResponse<AuthResponse>>("/auth/oauth/google", payload).then((res) => res.data),
 
   refreshToken: (payload: RefreshTokenRequest) =>
     apiClient

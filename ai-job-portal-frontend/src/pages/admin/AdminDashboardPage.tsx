@@ -1,10 +1,11 @@
 import { useEffect } from "react";
-import { Briefcase, Building2, FileText, Sparkles, Users } from "lucide-react";
+import { Briefcase, Building2, FileText, Users } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminDashboard, useRecordAdminLogin } from "@/features/admin/hooks/useAdminDashboard";
 import { RecentActivityPanel } from "@/features/admin/components/RecentActivityPanel";
+import { DashboardChartsPanel } from "@/features/admin/components/DashboardChartsPanel";
 
 export default function AdminDashboardPage() {
   const { user } = useAuth();
@@ -55,52 +56,14 @@ export default function AdminDashboardPage() {
       </div>
 
       {data && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Card>
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-primary-600" />
-              <h2 className="text-base font-semibold">Company verification</h2>
-            </div>
-            <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <div>
-                <dt className="text-[hsl(var(--muted))]">Pending</dt>
-                <dd className="font-medium">{data.companyStatistics.pendingCompanies}</dd>
-              </div>
-              <div>
-                <dt className="text-[hsl(var(--muted))]">Verified</dt>
-                <dd className="font-medium">{data.companyStatistics.verifiedCompanies}</dd>
-              </div>
-              <div>
-                <dt className="text-[hsl(var(--muted))]">Rejected</dt>
-                <dd className="font-medium">{data.companyStatistics.rejectedCompanies}</dd>
-              </div>
-              <div>
-                <dt className="text-[hsl(var(--muted))]">Suspended</dt>
-                <dd className="font-medium">{data.companyStatistics.suspendedCompanies}</dd>
-              </div>
-            </dl>
-          </Card>
-
-          <Card>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary-600" />
-              <h2 className="text-base font-semibold">AI usage</h2>
-            </div>
-            <dl className="mt-3 grid grid-cols-1 gap-3 text-sm">
-              <div className="flex items-center justify-between">
-                <dt className="text-[hsl(var(--muted))]">Resume analyses</dt>
-                <dd className="font-medium">{data.aiStatistics.totalResumeAnalyses}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-[hsl(var(--muted))]">Job recommendations</dt>
-                <dd className="font-medium">{data.aiStatistics.totalJobRecommendations}</dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-[hsl(var(--muted))]">Interview question sets</dt>
-                <dd className="font-medium">{data.aiStatistics.totalInterviewQuestionSets}</dd>
-              </div>
-            </dl>
-          </Card>
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">Analytics</h2>
+          <p className="mt-1 text-sm text-[hsl(var(--muted))]">
+            User growth, company verification, jobs, applications, and AI usage.
+          </p>
+          <div className="mt-4">
+            <DashboardChartsPanel />
+          </div>
         </div>
       )}
 

@@ -15,6 +15,14 @@ export interface LoginRequest {
   password: string;
 }
 
+// Mirrors auth-service GoogleAuthRequest. `role` only matters the first time
+// this Google account signs in (decides CANDIDATE vs RECRUITER for a brand
+// new account); it is ignored on every later login.
+export interface GoogleAuthRequest {
+  idToken: string;
+  role: Extract<RoleName, "CANDIDATE" | "RECRUITER">;
+}
+
 // Mirrors auth-service RefreshTokenRequest
 export interface RefreshTokenRequest {
   refreshToken: string;

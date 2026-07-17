@@ -9,6 +9,7 @@ import type { RoleName } from "@/types/auth";
 import type {
   ChangePasswordRequest,
   ForgotPasswordRequest,
+  GoogleAuthRequest,
   LoginRequest,
   RegisterRequest,
   ResendVerificationRequest,
@@ -28,6 +29,23 @@ export function useLogin() {
 
   return useMutation({
     mutationFn: (payload: LoginRequest) => authService.login(payload),
+    onSuccess: (response) => {
+      const { accessToken, refreshToken, user } = response.data;
+      loginSession(accessToken, refreshToken, user);
+      toast.success(response.message || "Login successful");
+      navigate(dashboardPathForRole(user.roles), { replace: true });
+    },
+    onError: (error) => toast.error(extractErrorMessage(error)),
+  });
+}
+
+/** "Continue with Google" — used on both Login and Register pages (Day 08). */
+export function useGoogleLogin() {
+  const { loginSession } = useAuth();
+  const navigate = useNavigate();
+
+  return useMutation({
+    mutationFn: (payload: GoogleAuthRequest) => authService.loginWithGoogle(payload),
     onSuccess: (response) => {
       const { accessToken, refreshToken, user } = response.data;
       loginSession(accessToken, refreshToken, user);

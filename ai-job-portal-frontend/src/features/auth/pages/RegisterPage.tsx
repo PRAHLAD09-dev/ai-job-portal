@@ -8,6 +8,7 @@ import { FormField } from "@/components/ui/form-field";
 import { Label } from "@/components/ui/label";
 import { registerSchema, type RegisterFormValues } from "@/features/auth/schemas/auth.schema";
 import { useRegister } from "@/features/auth/hooks/useAuthMutations";
+import { GoogleAuthButton } from "@/features/auth/components/GoogleAuthButton";
 import { ROUTES } from "@/constants/routes";
 import { cn } from "@/lib/cn";
 
@@ -93,6 +94,16 @@ export default function RegisterPage() {
           Create Account
         </Button>
       </form>
+
+      <div className="mt-6 flex items-center gap-3 text-xs text-[hsl(var(--muted))]">
+        <div className="h-px flex-1 bg-[hsl(var(--border-color))]" />
+        <span>or</span>
+        <div className="h-px flex-1 bg-[hsl(var(--border-color))]" />
+      </div>
+
+      <div className="mt-4">
+        <GoogleAuthButton role={role} />
+      </div>
 
       <p className="mt-6 text-center text-sm text-[hsl(var(--muted))]">
         Already have an account?{" "}

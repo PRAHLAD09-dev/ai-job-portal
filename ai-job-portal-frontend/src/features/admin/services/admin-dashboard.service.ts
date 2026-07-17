@@ -1,10 +1,15 @@
 import { apiClient } from "@/services/api-client";
 import type { ApiResponse, PageResponse } from "@/types/api";
-import type { AuditLogResponse, DashboardResponse } from "@/features/admin/types";
+import type { AuditLogResponse, DashboardChartsResponse, DashboardResponse } from "@/features/admin/types";
 
 /** Maps 1:1 to admin-service DashboardController (/admin/dashboard). */
 export const adminDashboardService = {
   get: () => apiClient.get<ApiResponse<DashboardResponse>>("/admin/dashboard").then((res) => res.data),
+
+  getCharts: (userGrowthDays = 30) =>
+    apiClient
+      .get<ApiResponse<DashboardChartsResponse>>("/admin/dashboard/charts", { params: { userGrowthDays } })
+      .then((res) => res.data),
 };
 
 export interface AuditLogParams {

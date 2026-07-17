@@ -127,6 +127,27 @@ export interface AuditLogResponse {
   createdAt: string;
 }
 
+/** A single labeled value in a distribution/breakdown chart (mirrors admin-service ChartDataPoint). */
+export interface ChartDataPoint {
+  label: string;
+  value: number;
+}
+
+/** Mirrors admin-service UserGrowthPointResponse (Auth Service signup counts by day). */
+export interface UserGrowthPointResponse {
+  date: string;
+  signupCount: number;
+}
+
+/** GET /admin/dashboard/charts — chart-ready data for the admin dashboard (Day 08 "Admin Dashboard: Add Charts"). */
+export interface DashboardChartsResponse {
+  userGrowth: UserGrowthPointResponse[];
+  companyVerification: ChartDataPoint[];
+  jobsByStatus: ChartDataPoint[];
+  applicationsByStatus: ChartDataPoint[];
+  aiUsageByFeature: ChartDataPoint[];
+}
+
 /** GET /admin/dashboard — aggregated platform statistics + recent activity. */
 export interface DashboardResponse {
   userStatistics: UserStatisticsResponse;

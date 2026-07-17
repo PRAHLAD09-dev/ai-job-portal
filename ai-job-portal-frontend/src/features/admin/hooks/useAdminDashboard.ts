@@ -13,6 +13,14 @@ export function useAdminDashboard() {
   });
 }
 
+export function useAdminDashboardCharts(userGrowthDays = 30) {
+  return useQuery({
+    queryKey: ["admin", "dashboard", "charts", userGrowthDays],
+    queryFn: () => adminDashboardService.getCharts(userGrowthDays).then((res) => res.data),
+    staleTime: 60_000,
+  });
+}
+
 /** Fire-and-forget — records that the current admin session opened the admin panel. */
 export function useRecordAdminLogin() {
   return useMutation({
