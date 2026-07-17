@@ -79,7 +79,8 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.POPULAR_SKILLS_CACHE}, allEntries = true)
+    @CacheEvict(value = { RedisCacheConfig.LATEST_JOBS_CACHE,
+            RedisCacheConfig.POPULAR_SKILLS_CACHE }, allEntries = true)
     public JobResponse createJob(UUID userId, String bearerToken, CreateJobRequest request) {
         RecruiterSummaryResponse recruiter = recruiterLookupService.fetchCurrentRecruiter(bearerToken);
         JobCategory category = jobCategoryLookupService.getByIdOrThrow(request.categoryId());
@@ -106,7 +107,8 @@ public class JobServiceImpl implements JobService {
                 .applicationDeadline(request.applicationDeadline())
                 .applyMethod(request.applyMethod())
                 .externalApplyUrl(request.applyMethod() == ApplyMethod.EXTERNAL_APPLY
-                        ? request.externalApplyUrl() : null)
+                        ? request.externalApplyUrl()
+                        : null)
                 .build();
 
         attachChildren(job, request.locations(), request.skills(), request.benefits(), request.requirements());
@@ -114,8 +116,7 @@ public class JobServiceImpl implements JobService {
         Job saved = jobRepository.save(job);
 
         applicationEventPublisher.publishEvent(new JobCreatedEvent(
-                saved.getId(), saved.getCompanyId(), userId, saved.getTitle(), Instant.now()
-        ));
+                saved.getId(), saved.getCompanyId(), userId, saved.getTitle(), Instant.now()));
 
         log.info("Created job id={} for companyId={}", saved.getId(), saved.getCompanyId());
         return jobMapper.toResponse(saved);
@@ -123,8 +124,8 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
-            RedisCacheConfig.TRENDING_JOBS_CACHE, RedisCacheConfig.POPULAR_SKILLS_CACHE}, allEntries = true)
+    @CacheEvict(value = { RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
+            RedisCacheConfig.TRENDING_JOBS_CACHE, RedisCacheConfig.POPULAR_SKILLS_CACHE }, allEntries = true)
     public JobResponse updateJob(UUID userId, String bearerToken, UUID jobId, UpdateJobRequest request) {
         RecruiterSummaryResponse recruiter = resolveCurrentRecruiter(bearerToken);
         Job job = jobOwnershipGuard.getOwnedJobOrThrow(jobId, recruiter.companyId());
@@ -145,7 +146,8 @@ public class JobServiceImpl implements JobService {
         job.setApplicationDeadline(request.applicationDeadline());
         job.setApplyMethod(request.applyMethod());
         job.setExternalApplyUrl(request.applyMethod() == ApplyMethod.EXTERNAL_APPLY
-                ? request.externalApplyUrl() : null);
+                ? request.externalApplyUrl()
+                : null);
 
         job.getLocations().clear();
         job.getSkills().clear();
@@ -156,8 +158,7 @@ public class JobServiceImpl implements JobService {
         Job saved = jobRepository.save(job);
 
         applicationEventPublisher.publishEvent(new JobUpdatedEvent(
-                saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()
-        ));
+                saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()));
 
         log.info("Updated job id={}", saved.getId());
         return jobMapper.toResponse(saved);
@@ -165,8 +166,8 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
-            RedisCacheConfig.TRENDING_JOBS_CACHE}, allEntries = true)
+    @CacheEvict(value = { RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
+            RedisCacheConfig.TRENDING_JOBS_CACHE }, allEntries = true)
     public void deleteJob(UUID userId, String bearerToken, UUID jobId) {
         RecruiterSummaryResponse recruiter = resolveCurrentRecruiter(bearerToken);
         Job job = jobOwnershipGuard.getOwnedJobOrThrow(jobId, recruiter.companyId());
@@ -179,8 +180,8 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
-            RedisCacheConfig.TRENDING_JOBS_CACHE}, allEntries = true)
+    @CacheEvict(value = { RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
+            RedisCacheConfig.TRENDING_JOBS_CACHE }, allEntries = true)
     public JobResponse publishJob(UUID userId, String bearerToken, UUID jobId) {
         RecruiterSummaryResponse recruiter = resolveCurrentRecruiter(bearerToken);
         Job job = jobOwnershipGuard.getOwnedJobOrThrow(jobId, recruiter.companyId());
@@ -195,8 +196,7 @@ public class JobServiceImpl implements JobService {
         Job saved = jobRepository.save(job);
 
         applicationEventPublisher.publishEvent(new JobPublishedEvent(
-                saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()
-        ));
+                saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()));
 
         log.info("Published job id={}", saved.getId());
         return jobMapper.toResponse(saved);
@@ -204,8 +204,8 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
-            RedisCacheConfig.TRENDING_JOBS_CACHE}, allEntries = true)
+    @CacheEvict(value = { RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
+            RedisCacheConfig.TRENDING_JOBS_CACHE }, allEntries = true)
     public JobResponse closeJob(UUID userId, String bearerToken, UUID jobId) {
         RecruiterSummaryResponse recruiter = resolveCurrentRecruiter(bearerToken);
         Job job = jobOwnershipGuard.getOwnedJobOrThrow(jobId, recruiter.companyId());
@@ -219,8 +219,7 @@ public class JobServiceImpl implements JobService {
         Job saved = jobRepository.save(job);
 
         applicationEventPublisher.publishEvent(new JobClosedEvent(
-                saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()
-        ));
+                saved.getId(), saved.getCompanyId(), saved.getTitle(), Instant.now()));
 
         log.info("Closed job id={}", saved.getId());
         return jobMapper.toResponse(saved);
@@ -228,8 +227,8 @@ public class JobServiceImpl implements JobService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
-            RedisCacheConfig.TRENDING_JOBS_CACHE}, allEntries = true)
+    @CacheEvict(value = { RedisCacheConfig.LATEST_JOBS_CACHE, RedisCacheConfig.FEATURED_JOBS_CACHE,
+            RedisCacheConfig.TRENDING_JOBS_CACHE }, allEntries = true)
     public JobResponse reopenJob(UUID userId, String bearerToken, UUID jobId) {
         RecruiterSummaryResponse recruiter = resolveCurrentRecruiter(bearerToken);
         Job job = jobOwnershipGuard.getOwnedJobOrThrow(jobId, recruiter.companyId());
@@ -291,7 +290,8 @@ public class JobServiceImpl implements JobService {
             duplicate.getSkills().add(copy);
         }
         for (JobBenefit benefit : original.getBenefits()) {
-            JobBenefit copy = JobBenefit.builder().title(benefit.getTitle()).description(benefit.getDescription()).build();
+            JobBenefit copy = JobBenefit.builder().title(benefit.getTitle()).description(benefit.getDescription())
+                    .build();
             copy.setJob(duplicate);
             duplicate.getBenefits().add(copy);
         }
@@ -352,17 +352,19 @@ public class JobServiceImpl implements JobService {
     public JobResponse getJobById(UUID jobId) {
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new JobNotFoundException(jobId));
+        // Mirror the pending increment in-memory and map to the response DTO
+        // FIRST, while 'job' is still attached to the Hibernate session - the
+        // mapper (via MapStruct) touches lazy associations (category, skills,
+        // benefits, locations, requirements), which requires an active
+        // session to initialize.
         // incrementViewCount is a @Modifying(clearAutomatically = true) bulk
-        // update: it atomically increments view_count in the DB (unchanged
-        // behavior), and clearing the persistence context afterward detaches
-        // the 'job' loaded above. Because it's now detached, setting its
-        // in-memory viewCount here is safe - it just mirrors the value the
-        // bulk update already committed, and won't be re-flushed by Hibernate
-        // dirty-checking (there's nothing to check anymore; it's detached).
-        // Without this, the response would show the pre-increment count.
-        jobRepository.incrementViewCount(jobId);
+        // update: it atomically increments view_count in the DB. Running it
+        // LAST means the persistence-context clear it triggers can no longer
+        // detach 'job' before the lazy associations have been read above.
         job.setViewCount(job.getViewCount() + 1);
-        return jobMapper.toResponse(job);
+        JobResponse response = jobMapper.toResponse(job);
+        jobRepository.incrementViewCount(jobId);
+        return response;
     }
 
     @Override
@@ -370,9 +372,12 @@ public class JobServiceImpl implements JobService {
     public JobResponse getJobBySlug(String slug) {
         Job job = jobRepository.findBySlug(slug)
                 .orElseThrow(() -> new JobNotFoundException(slug));
-        jobRepository.incrementViewCount(job.getId());
+        // Same ordering fix as getJobById: map while still attached, then
+        // run the clearing bulk-update last.
         job.setViewCount(job.getViewCount() + 1);
-        return jobMapper.toResponse(job);
+        JobResponse response = jobMapper.toResponse(job);
+        jobRepository.incrementViewCount(job.getId());
+        return response;
     }
 
     @Override
@@ -417,8 +422,7 @@ public class JobServiceImpl implements JobService {
 
         JobSearchCriteria criteria = new JobSearchCriteria(
                 null, job.getCategory().getId(), null, null, null, null,
-                null, job.getJobType(), null, null, null, null, null
-        );
+                null, job.getJobType(), null, null, null, null, null);
 
         Pageable pageable = PageRequest.of(0, SIMILAR_LIMIT, Sort.by(Sort.Direction.DESC, "publishedAt"));
         return jobRepository.findAll(JobSpecification.withCriteria(criteria, true), pageable)
@@ -430,10 +434,11 @@ public class JobServiceImpl implements JobService {
 
     // ---- internal helpers ----
 
-    private void attachChildren(Job job, List<com.prahlad.aijobportal.jobservice.location.dto.request.JobLocationRequest> locations,
-                                 List<com.prahlad.aijobportal.jobservice.skill.dto.request.JobSkillRequest> skills,
-                                 List<com.prahlad.aijobportal.jobservice.benefit.dto.request.JobBenefitRequest> benefits,
-                                 List<com.prahlad.aijobportal.jobservice.requirement.dto.request.JobRequirementRequest> requirements) {
+    private void attachChildren(Job job,
+            List<com.prahlad.aijobportal.jobservice.location.dto.request.JobLocationRequest> locations,
+            List<com.prahlad.aijobportal.jobservice.skill.dto.request.JobSkillRequest> skills,
+            List<com.prahlad.aijobportal.jobservice.benefit.dto.request.JobBenefitRequest> benefits,
+            List<com.prahlad.aijobportal.jobservice.requirement.dto.request.JobRequirementRequest> requirements) {
         if (locations != null) {
             locations.forEach(locationRequest -> {
                 JobLocation location = jobLocationMapper.toEntity(locationRequest);
