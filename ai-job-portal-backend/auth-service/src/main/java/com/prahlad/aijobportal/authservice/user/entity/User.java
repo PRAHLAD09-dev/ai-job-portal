@@ -2,6 +2,7 @@ package com.prahlad.aijobportal.authservice.user.entity;
 
 import com.prahlad.aijobportal.authservice.config.BaseEntity;
 import com.prahlad.aijobportal.authservice.user.enums.AccountStatus;
+import com.prahlad.aijobportal.authservice.user.enums.AuthProvider;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -43,7 +44,7 @@ public class User extends BaseEntity {
     @Column(name = "email", nullable = false, unique = true, length = 255)
     private String email;
 
-    @Column(name = "password_hash", nullable = false)
+    @Column(name = "password_hash")
     private String passwordHash;
 
     @Column(name = "first_name", nullable = false, length = 100)
@@ -66,6 +67,16 @@ public class User extends BaseEntity {
     @Column(name = "account_locked", nullable = false)
     @Builder.Default
     private boolean accountLocked = false;
+
+    /** DAY12 "Google OAuth" — how this account authenticates. Defaults to LOCAL for every pre-existing row. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    @Builder.Default
+    private AuthProvider authProvider = AuthProvider.LOCAL;
+
+    /** Google's stable "sub" claim for this account; null unless signed in with Google at least once. */
+    @Column(name = "google_id", unique = true, length = 255)
+    private String googleId;
 
     @ManyToMany(fetch = FetchType.LAZY, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(

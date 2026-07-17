@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.adminservice.dashboard.service;
 
+import com.prahlad.aijobportal.adminservice.dashboard.dto.response.DashboardChartsResponse;
 import com.prahlad.aijobportal.adminservice.dashboard.dto.response.DashboardResponse;
 
 /**
@@ -10,4 +11,7 @@ import com.prahlad.aijobportal.adminservice.dashboard.dto.response.DashboardResp
 public interface DashboardService {
 
     DashboardResponse getDashboard();
+
+    /** DAY12 "Admin Dashboard: Add Charts". */
+    DashboardChartsResponse getDashboardCharts(int userGrowthDays);
 }

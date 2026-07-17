@@ -21,6 +21,13 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # DAY12 "Production Improvements": cap ?size= on paginated endpoints (see
+  # config-repo/auth-service.yml's copy of this same comment for why).
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
   cloud:
     openfeign:
       httpclient:

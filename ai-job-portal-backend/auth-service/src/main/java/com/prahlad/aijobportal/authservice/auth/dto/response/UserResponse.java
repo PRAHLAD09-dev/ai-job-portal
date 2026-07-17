@@ -1,6 +1,7 @@
 package com.prahlad.aijobportal.authservice.auth.dto.response;
 
 import com.prahlad.aijobportal.authservice.user.enums.AccountStatus;
+import com.prahlad.aijobportal.authservice.user.enums.AuthProvider;
 
 import java.time.Instant;
 import java.util.Set;
@@ -18,6 +19,7 @@ public record UserResponse(
         Set<String> roles,
         AccountStatus status,
         boolean emailVerified,
+        AuthProvider authProvider,
         Instant createdAt
 ) {
 }

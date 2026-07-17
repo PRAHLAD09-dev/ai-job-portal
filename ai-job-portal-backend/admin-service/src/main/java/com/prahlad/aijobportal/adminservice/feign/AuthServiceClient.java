@@ -1,6 +1,7 @@
 package com.prahlad.aijobportal.adminservice.feign;
 
 import com.prahlad.aijobportal.adminservice.feign.dto.AuthUserResponse;
+import com.prahlad.aijobportal.adminservice.feign.dto.UserGrowthPointResponse;
 import com.prahlad.aijobportal.adminservice.feign.dto.UserStatisticsResponse;
 import com.prahlad.aijobportal.common.constant.CommonConstants;
 import com.prahlad.aijobportal.common.response.ApiResponse;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -37,6 +39,10 @@ public interface AuthServiceClient {
 
     @GetMapping("/statistics")
     ApiResponse<UserStatisticsResponse> getStatistics();
+
+    /** DAY12 "Admin Dashboard: User Growth" — daily signup counts for the last {@code days} days. */
+    @GetMapping("/growth")
+    ApiResponse<List<UserGrowthPointResponse>> getUserGrowth(@RequestParam int days);
 
     @GetMapping("/{userId}")
     ApiResponse<AuthUserResponse> getUser(@PathVariable("userId") UUID userId);

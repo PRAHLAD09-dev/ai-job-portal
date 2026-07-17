@@ -22,6 +22,13 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # DAY12 "Production Improvements": cap ?size= on paginated endpoints (see
+  # config-repo/auth-service.yml's copy of this same comment for why).
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
   # Overrides the shared JsonDeserializer value-deserializer declared in
   # config-repo/application.yml with StringDeserializer, scoped to THIS
   # service only. NotificationEventConsumer reads every event payload as
@@ -53,6 +60,13 @@ app:
   # purpose: fail fast at startup rather than silently use a guessable key.
   internal:
     service-token: ${INTERNAL_SERVICE_TOKEN}
+
+  # DAY12 "Email Templates": base URL used to build "go to your dashboard"
+  # call-to-action links in notification e-mails. Not role-specific — the
+  # frontend's own auth redirect sends a candidate/recruiter to their
+  # correct dashboard after login regardless of which path they land on.
+  frontend:
+    dashboard-url: ${FRONTEND_DASHBOARD_URL:http://localhost:5173/login}
 
   mail:
     from: ${MAIL_FROM:no-reply@aijobportal.com}

@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.authservice.email;
 
+import com.prahlad.aijobportal.common.email.EmailLayout;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -45,24 +46,32 @@ public class BrevoEmailService implements EmailService {
     public void sendEmailVerificationEmail(String toEmail, String firstName, String verificationLink) {
         String subject = "Verify your AI Job Portal account";
         String body = """
-                <p>Hi %s,</p>
-                <p>Thanks for registering with AI Job Portal. Please verify your e-mail address by clicking the link below:</p>
-                <p><a href="%s">Verify my e-mail</a></p>
-                <p>This link will expire in 24 hours. If you did not create this account, you can safely ignore this e-mail.</p>
-                """.formatted(firstName, verificationLink);
-        send(toEmail, subject, body);
+                <p style="margin:0 0 16px;">Hi %s,</p>
+                <p style="margin:0 0 16px;">Thanks for registering with AI Job Portal. Please verify your e-mail address to activate your account.</p>
+                %s
+                %s
+                """.formatted(
+                firstName,
+                EmailLayout.button("Verify my e-mail", verificationLink),
+                EmailLayout.note("This link expires in 24 hours. If you did not create this account, you can safely ignore this e-mail.")
+        );
+        send(toEmail, subject, EmailLayout.render("Verify your e-mail to activate your AI Job Portal account", body));
     }
 
     @Override
     public void sendPasswordResetEmail(String toEmail, String firstName, String resetLink) {
         String subject = "Reset your AI Job Portal password";
         String body = """
-                <p>Hi %s,</p>
-                <p>We received a request to reset your password. Click the link below to choose a new password:</p>
-                <p><a href="%s">Reset my password</a></p>
-                <p>This link will expire in 1 hour. If you did not request a password reset, you can safely ignore this e-mail.</p>
-                """.formatted(firstName, resetLink);
-        send(toEmail, subject, body);
+                <p style="margin:0 0 16px;">Hi %s,</p>
+                <p style="margin:0 0 16px;">We received a request to reset your password. Click below to choose a new one.</p>
+                %s
+                %s
+                """.formatted(
+                firstName,
+                EmailLayout.button("Reset my password", resetLink),
+                EmailLayout.note("This link expires in 1 hour. If you did not request a password reset, you can safely ignore this e-mail — your password will not be changed.")
+        );
+        send(toEmail, subject, EmailLayout.render("Reset your AI Job Portal password", body));
     }
 
     private void send(String toEmail, String subject, String htmlBody) {

@@ -12,9 +12,12 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 
@@ -91,6 +94,38 @@ public class GlobalExceptionHandler {
                 .build();
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ApiResponse.failure("Access denied", List.of(error)));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        ApiError error = ApiError.builder()
+                .field(ex.getName())
+                .code("INVALID_PARAMETER_TYPE")
+                .message("'%s' has an invalid value: '%s'".formatted(ex.getName(), ex.getValue()))
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure("Invalid request parameter", List.of(error)));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingParameter(MissingServletRequestParameterException ex) {
+        ApiError error = ApiError.builder()
+                .field(ex.getParameterName())
+                .code("MISSING_PARAMETER")
+                .message("Required parameter '%s' is missing".formatted(ex.getParameterName()))
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.failure("Missing required parameter", List.of(error)));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        ApiError error = ApiError.builder()
+                .code("METHOD_NOT_ALLOWED")
+                .message(ex.getMessage())
+                .build();
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED)
+                .body(ApiResponse.failure("HTTP method not allowed for this endpoint", List.of(error)));
     }
 
     @ExceptionHandler(Exception.class)

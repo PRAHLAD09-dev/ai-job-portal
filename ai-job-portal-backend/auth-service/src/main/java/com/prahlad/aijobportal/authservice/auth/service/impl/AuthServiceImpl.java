@@ -2,6 +2,7 @@ package com.prahlad.aijobportal.authservice.auth.service.impl;
 
 import com.prahlad.aijobportal.authservice.auth.dto.request.ChangePasswordRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.ForgotPasswordRequest;
+import com.prahlad.aijobportal.authservice.auth.dto.request.GoogleAuthRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.LoginRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.RefreshTokenRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.RegisterRequest;
@@ -28,11 +29,14 @@ import com.prahlad.aijobportal.authservice.email.EmailService;
 import com.prahlad.aijobportal.authservice.event.AuthEventPublisher;
 import com.prahlad.aijobportal.authservice.event.dto.PasswordResetRequestedEvent;
 import com.prahlad.aijobportal.authservice.event.dto.UserRegisteredEvent;
+import com.prahlad.aijobportal.authservice.oauth.dto.GoogleIdTokenPayload;
+import com.prahlad.aijobportal.authservice.oauth.service.GoogleTokenVerificationService;
 import com.prahlad.aijobportal.authservice.security.config.AuthProperties;
 import com.prahlad.aijobportal.authservice.security.jwt.JwtTokenProvider;
 import com.prahlad.aijobportal.authservice.user.entity.Role;
 import com.prahlad.aijobportal.authservice.user.entity.User;
 import com.prahlad.aijobportal.authservice.user.enums.AccountStatus;
+import com.prahlad.aijobportal.authservice.user.enums.AuthProvider;
 import com.prahlad.aijobportal.authservice.user.enums.RoleName;
 import com.prahlad.aijobportal.authservice.user.repository.RoleRepository;
 import com.prahlad.aijobportal.authservice.user.repository.UserRepository;
@@ -78,6 +82,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthEventPublisher authEventPublisher;
     private final AuthProperties authProperties;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final GoogleTokenVerificationService googleTokenVerificationService;
 
     private static final Set<RoleName> SELF_REGISTERABLE_ROLES = Set.of(RoleName.CANDIDATE, RoleName.RECRUITER);
 
@@ -137,6 +142,13 @@ public class AuthServiceImpl implements AuthService {
             throw new AccountLockedException("This account has been locked. Please contact support.");
         }
 
+        if (user.getPasswordHash() == null) {
+            // Google-only account (never set a local password): fail clearly
+            // rather than let BCryptPasswordEncoder#matches throw on a null
+            // encoded password.
+            throw new InvalidCredentialsException("This account uses Google Sign-In. Please continue with Google.");
+        }
+
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             handleFailedLogin(user);
             throw new InvalidCredentialsException("Invalid email or password");
@@ -149,6 +161,81 @@ public class AuthServiceImpl implements AuthService {
         resetFailedLoginAttempts(user);
 
         return issueAuthResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public AuthResponse loginWithGoogle(GoogleAuthRequest request) {
+        if (!SELF_REGISTERABLE_ROLES.contains(request.role())) {
+            throw new InvalidCredentialsException("Google sign-in is only permitted for CANDIDATE or RECRUITER roles");
+        }
+
+        GoogleIdTokenPayload payload = googleTokenVerificationService.verify(request.idToken());
+
+        if (!payload.emailVerified()) {
+            throw new InvalidCredentialsException("Google account email is not verified");
+        }
+
+        User user = userRepository.findByGoogleId(payload.googleId())
+                .orElseGet(() -> linkOrCreateGoogleUser(payload, request.role()));
+
+        if (user.isAccountLocked() || user.getStatus() == AccountStatus.DISABLED) {
+            throw new AccountLockedException("This account has been locked. Please contact support.");
+        }
+
+        resetFailedLoginAttempts(user);
+
+        return issueAuthResponse(user);
+    }
+
+    /**
+     * First-ever Google sign-in for this Google account: either links it to
+     * an existing LOCAL account with the same (Google-verified) email, or
+     * creates a brand-new account outright. Either way the account ends up
+     * ACTIVE + emailVerified=true immediately - Google has already done the
+     * email-ownership proof our own verification link normally provides.
+     */
+    private User linkOrCreateGoogleUser(GoogleIdTokenPayload payload, RoleName requestedRole) {
+        return userRepository.findByEmail(payload.email())
+                .map(existing -> {
+                    existing.setGoogleId(payload.googleId());
+                    if (!existing.isEmailVerified()) {
+                        existing.setEmailVerified(true);
+                        existing.setStatus(AccountStatus.ACTIVE);
+                    }
+                    log.info("Linked Google account to existing userId={}", existing.getId());
+                    return userRepository.save(existing);
+                })
+                .orElseGet(() -> {
+                    Role role = roleRepository.findByName(requestedRole)
+                            .orElseThrow(() -> new ResourceNotFoundException("Role", "name", requestedRole));
+
+                    User newUser = User.builder()
+                            .email(payload.email())
+                            .passwordHash(null)
+                            .firstName(payload.firstName())
+                            .lastName(payload.lastName())
+                            .status(AccountStatus.ACTIVE)
+                            .emailVerified(true)
+                            .authProvider(AuthProvider.GOOGLE)
+                            .googleId(payload.googleId())
+                            .build();
+                    newUser.addRole(role);
+
+                    User savedUser = userRepository.save(newUser);
+
+                    applicationEventPublisher.publishEvent(new UserRegisteredEvent(
+                            savedUser.getId(),
+                            savedUser.getEmail(),
+                            savedUser.getFirstName(),
+                            savedUser.getLastName(),
+                            role.getName().name(),
+                            Instant.now()
+                    ));
+
+                    log.info("Registered new user via Google OAuth with id={}", savedUser.getId());
+                    return savedUser;
+                });
     }
 
     @Override
@@ -314,6 +401,11 @@ public class AuthServiceImpl implements AuthService {
     public void changePassword(UUID userId, ChangePasswordRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (user.getPasswordHash() == null) {
+            throw new InvalidCredentialsException(
+                    "This account uses Google Sign-In and has no password to change. Use \"Forgot password\" to set one.");
+        }
 
         if (!passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             throw new InvalidCredentialsException("Current password is incorrect");

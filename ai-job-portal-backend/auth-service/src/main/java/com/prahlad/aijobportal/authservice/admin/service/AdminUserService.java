@@ -1,12 +1,14 @@
 package com.prahlad.aijobportal.authservice.admin.service;
 
 import com.prahlad.aijobportal.authservice.admin.dto.response.AdminUserResponse;
+import com.prahlad.aijobportal.authservice.admin.dto.response.UserGrowthPointResponse;
 import com.prahlad.aijobportal.authservice.admin.dto.response.UserPlatformStatisticsResponse;
 import com.prahlad.aijobportal.authservice.user.enums.AccountStatus;
 import com.prahlad.aijobportal.authservice.user.enums.RoleName;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -29,4 +31,7 @@ public interface AdminUserService {
     void deleteUser(UUID userId);
 
     UserPlatformStatisticsResponse getPlatformStatistics();
+
+    /** DAY12 "Admin Dashboard: User Growth" — daily signup counts for the last {@code days} days. */
+    List<UserGrowthPointResponse> getUserGrowth(int days);
 }

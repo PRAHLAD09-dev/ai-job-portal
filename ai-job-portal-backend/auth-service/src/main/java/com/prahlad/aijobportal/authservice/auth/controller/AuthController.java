@@ -2,6 +2,7 @@ package com.prahlad.aijobportal.authservice.auth.controller;
 
 import com.prahlad.aijobportal.authservice.auth.dto.request.ChangePasswordRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.ForgotPasswordRequest;
+import com.prahlad.aijobportal.authservice.auth.dto.request.GoogleAuthRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.LoginRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.RefreshTokenRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.RegisterRequest;
@@ -53,6 +54,13 @@ public class AuthController {
     @Operation(summary = "Authenticate with email and password")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(ApiResponse.success("Login successful", response));
+    }
+
+    @PostMapping("/oauth/google")
+    @Operation(summary = "Authenticate (or auto-register) with a Google Sign-In ID token")
+    public ResponseEntity<ApiResponse<AuthResponse>> loginWithGoogle(@Valid @RequestBody GoogleAuthRequest request) {
+        AuthResponse response = authService.loginWithGoogle(request);
         return ResponseEntity.ok(ApiResponse.success("Login successful", response));
     }
 

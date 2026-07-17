@@ -216,6 +216,7 @@ services:
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-AI Job Portal}
       FRONTEND_VERIFY_EMAIL_URL: ${FRONTEND_VERIFY_EMAIL_URL:-http://localhost:5173/verify-email}
       FRONTEND_RESET_PASSWORD_URL: ${FRONTEND_RESET_PASSWORD_URL:-http://localhost:5173/reset-password}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:-}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
       # Creates the platform's first ADMIN/SUPER_ADMIN account on startup
       # (see AdminBootstrapRunner) — only if no admin account exists yet.
@@ -560,6 +561,7 @@ services:
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       MAIL_FROM: ${MAIL_FROM:-no-reply@aijobportal.com}
       MAIL_FROM_NAME: ${MAIL_FROM_NAME:-AI Job Portal}
+      FRONTEND_DASHBOARD_URL: ${FRONTEND_DASHBOARD_URL:-http://localhost:5173/login}
       INTERNAL_SERVICE_TOKEN: ${INTERNAL_SERVICE_TOKEN}
     depends_on:
       config-server:

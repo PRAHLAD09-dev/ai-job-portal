@@ -46,6 +46,7 @@ public class SecurityConfig {
     private static final String[] PUBLIC_ENDPOINTS = {
             CommonConstants.API_BASE_PATH + "/auth/register",
             CommonConstants.API_BASE_PATH + "/auth/login",
+            CommonConstants.API_BASE_PATH + "/auth/oauth/google",
             CommonConstants.API_BASE_PATH + "/auth/refresh-token",
             CommonConstants.API_BASE_PATH + "/auth/verify-email",
             CommonConstants.API_BASE_PATH + "/auth/resend-verification",

@@ -21,6 +21,17 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # DAY12 "Production Improvements": Spring Data's own default max page
+  # size (2000) is large enough that an uncapped ?size= query parameter
+  # on any paginated endpoint could pull far more rows than any legitimate
+  # UI page needs. 100 comfortably covers every admin list/search screen.
+  # (Per-endpoint default page size is already set explicitly via each
+  # controller's own @PageableDefault, e.g. CommonConstants.DEFAULT_PAGE_SIZE.)
+  data:
+    web:
+      pageable:
+        max-page-size: 100
+
 # ---- JWT ----
 # JWT_SECRET / JWT_REFRESH_SECRET are mandatory environment variables with
 # NO default value here on purpose: the service must fail fast at startup
@@ -71,6 +82,14 @@ app:
     password: ${ADMIN_BOOTSTRAP_PASSWORD:}
     first-name: ${ADMIN_BOOTSTRAP_FIRST_NAME:Platform}
     last-name: ${ADMIN_BOOTSTRAP_LAST_NAME:Administrator}
+
+# ---- DAY12 "Google OAuth" ----
+# No default client-id: an empty audience would make GoogleIdTokenVerifier
+# reject every token, which is the safe failure mode if this is left
+# unset rather than silently accepting tokens meant for a different app.
+google:
+  oauth:
+    client-id: ${GOOGLE_OAUTH_CLIENT_ID:}
 
 springdoc:
   api-docs:

@@ -1,5 +1,6 @@
 package com.prahlad.aijobportal.adminservice.dashboard.controller;
 
+import com.prahlad.aijobportal.adminservice.dashboard.dto.response.DashboardChartsResponse;
 import com.prahlad.aijobportal.adminservice.dashboard.dto.response.DashboardResponse;
 import com.prahlad.aijobportal.adminservice.dashboard.service.DashboardService;
 import com.prahlad.aijobportal.common.constant.CommonConstants;
@@ -10,12 +11,16 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Admin Service's Dashboard feature (DAY09_ADMIN_SERVICE.md): platform
  * statistics (Total Users, Recruiters, Candidates, Companies, Jobs,
- * Applications) + Recent Activity, all fetched live.
+ * Applications) + Recent Activity, all fetched live. Chart data
+ * (DAY12_..._Production_Polish.md's "Admin Dashboard: Add Charts") is
+ * served separately below so the plain-numbers dashboard stays fast and
+ * unaffected if a chart-only downstream call is slow.
  */
 @RestController
 @RequestMapping(CommonConstants.API_BASE_PATH + "/admin/dashboard")
@@ -29,5 +34,12 @@ public class DashboardController {
     @Operation(summary = "Get aggregated platform dashboard statistics and recent activity")
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboard() {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboard()));
+    }
+
+    @GetMapping("/charts")
+    @Operation(summary = "Get chart-ready data: user growth, company verification, jobs/applications/AI usage breakdowns")
+    public ResponseEntity<ApiResponse<DashboardChartsResponse>> getDashboardCharts(
+            @RequestParam(defaultValue = "30") int userGrowthDays) {
+        return ResponseEntity.ok(ApiResponse.success(dashboardService.getDashboardCharts(userGrowthDays)));
     }
 }

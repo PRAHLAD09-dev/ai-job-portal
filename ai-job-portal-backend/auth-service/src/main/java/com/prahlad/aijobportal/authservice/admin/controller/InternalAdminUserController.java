@@ -1,6 +1,7 @@
 package com.prahlad.aijobportal.authservice.admin.controller;
 
 import com.prahlad.aijobportal.authservice.admin.dto.response.AdminUserResponse;
+import com.prahlad.aijobportal.authservice.admin.dto.response.UserGrowthPointResponse;
 import com.prahlad.aijobportal.authservice.admin.dto.response.UserPlatformStatisticsResponse;
 import com.prahlad.aijobportal.authservice.admin.service.AdminUserService;
 import com.prahlad.aijobportal.authservice.user.enums.AccountStatus;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -58,6 +60,13 @@ public class InternalAdminUserController {
     @Operation(summary = "Get platform-wide user statistics (internal callers only)")
     public ResponseEntity<ApiResponse<UserPlatformStatisticsResponse>> getStatistics() {
         return ResponseEntity.ok(ApiResponse.success(adminUserService.getPlatformStatistics()));
+    }
+
+    @GetMapping("/growth")
+    @Operation(summary = "Get daily signup counts for the last N days, for the Admin Dashboard's User Growth chart (internal callers only)")
+    public ResponseEntity<ApiResponse<List<UserGrowthPointResponse>>> getUserGrowth(
+            @RequestParam(defaultValue = "30") int days) {
+        return ResponseEntity.ok(ApiResponse.success(adminUserService.getUserGrowth(days)));
     }
 
     @GetMapping("/{userId}")

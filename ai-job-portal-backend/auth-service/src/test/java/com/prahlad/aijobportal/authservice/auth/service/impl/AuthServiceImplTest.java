@@ -20,6 +20,7 @@ import com.prahlad.aijobportal.authservice.security.jwt.JwtTokenProvider;
 import com.prahlad.aijobportal.authservice.user.entity.Role;
 import com.prahlad.aijobportal.authservice.user.entity.User;
 import com.prahlad.aijobportal.authservice.user.enums.AccountStatus;
+import com.prahlad.aijobportal.authservice.user.enums.AuthProvider;
 import com.prahlad.aijobportal.authservice.user.enums.RoleName;
 import com.prahlad.aijobportal.authservice.user.repository.RoleRepository;
 import com.prahlad.aijobportal.authservice.user.repository.UserRepository;
@@ -111,7 +112,7 @@ class AuthServiceImplTest {
         when(userRepository.save(any(User.class))).thenReturn(savedUser);
         when(userMapper.toUserResponse(savedUser)).thenReturn(
                 new UserResponse(savedUser.getId(), savedUser.getEmail(), "Jane", "Doe",
-                        Set.of("CANDIDATE"), AccountStatus.PENDING_VERIFICATION, false, Instant.now()));
+                        Set.of("CANDIDATE"), AccountStatus.PENDING_VERIFICATION, false, AuthProvider.LOCAL, Instant.now()));
 
         UserResponse response = authService.register(request);
 
@@ -169,7 +170,7 @@ class AuthServiceImplTest {
         when(jwtTokenProvider.getAccessTokenExpirationSeconds()).thenReturn(900L);
         when(userMapper.toUserResponse(user)).thenReturn(
                 new UserResponse(user.getId(), user.getEmail(), "Jane", "Doe",
-                        Set.of("CANDIDATE"), AccountStatus.ACTIVE, true, Instant.now()));
+                        Set.of("CANDIDATE"), AccountStatus.ACTIVE, true, AuthProvider.LOCAL, Instant.now()));
 
         AuthResponse response = authService.login(request);
 

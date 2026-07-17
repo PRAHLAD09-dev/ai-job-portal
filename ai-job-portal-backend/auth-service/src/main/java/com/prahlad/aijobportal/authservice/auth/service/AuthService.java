@@ -2,6 +2,7 @@ package com.prahlad.aijobportal.authservice.auth.service;
 
 import com.prahlad.aijobportal.authservice.auth.dto.request.ChangePasswordRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.ForgotPasswordRequest;
+import com.prahlad.aijobportal.authservice.auth.dto.request.GoogleAuthRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.LoginRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.RefreshTokenRequest;
 import com.prahlad.aijobportal.authservice.auth.dto.request.RegisterRequest;
@@ -18,6 +19,9 @@ public interface AuthService {
     UserResponse register(RegisterRequest request);
 
     AuthResponse login(LoginRequest request);
+
+    /** DAY12 "Google OAuth": verifies the ID token, then logs in an existing account or auto-registers a new one. */
+    AuthResponse loginWithGoogle(GoogleAuthRequest request);
 
     AuthResponse refreshToken(RefreshTokenRequest request);
 

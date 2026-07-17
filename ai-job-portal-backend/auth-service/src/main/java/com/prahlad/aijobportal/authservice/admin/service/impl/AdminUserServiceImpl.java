@@ -1,6 +1,7 @@
 package com.prahlad.aijobportal.authservice.admin.service.impl;
 
 import com.prahlad.aijobportal.authservice.admin.dto.response.AdminUserResponse;
+import com.prahlad.aijobportal.authservice.admin.dto.response.UserGrowthPointResponse;
 import com.prahlad.aijobportal.authservice.admin.dto.response.UserPlatformStatisticsResponse;
 import com.prahlad.aijobportal.authservice.admin.mapper.AdminUserMapper;
 import com.prahlad.aijobportal.authservice.admin.service.AdminUserService;
@@ -17,6 +18,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -79,6 +83,15 @@ public class AdminUserServiceImpl implements AdminUserService {
                 userRepository.countByStatus(AccountStatus.DISABLED),
                 userRepository.countByStatus(AccountStatus.PENDING_VERIFICATION)
         );
+    }
+
+    @Override
+    public List<UserGrowthPointResponse> getUserGrowth(int days) {
+        int clampedDays = Math.max(1, Math.min(days, 365));
+        Instant since = Instant.now().truncatedTo(ChronoUnit.DAYS).minus(clampedDays, ChronoUnit.DAYS);
+        return userRepository.findDailySignupCountsSince(since).stream()
+                .map(row -> new UserGrowthPointResponse(row.getDay(), row.getSignupCount()))
+                .toList();
     }
 
     private User findUserOrThrow(UUID userId) {

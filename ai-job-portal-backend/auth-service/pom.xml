@@ -101,6 +101,19 @@
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
+        <!-- DAY12 "Google OAuth": official Google client, used only for
+             GoogleIdTokenVerifier - verifies a Google Sign-In ID token's
+             signature (against Google's published JWKS, cached and
+             auto-refreshed by the library), audience, issuer, and
+             expiry locally, without a network round trip per login. This
+             is Google's own recommended server-side verification path:
+             https://developers.google.com/identity/sign-in/web/backend-auth -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client</artifactId>
+            <version>2.7.0</version>
+        </dependency>
+
         <!-- Service Discovery + Config Client -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
