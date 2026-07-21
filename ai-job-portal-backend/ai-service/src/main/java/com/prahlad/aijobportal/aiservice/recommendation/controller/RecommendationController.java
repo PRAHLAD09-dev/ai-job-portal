@@ -11,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -41,6 +42,19 @@ public class RecommendationController {
             @AuthenticationPrincipal AuthenticatedUser principal,
             @RequestHeader(CommonConstants.AUTHORIZATION_HEADER) String bearerToken) {
         List<JobRecommendationResponse> response = recommendationService.recommendJobs(principal.userId(), bearerToken);
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/jobs/{jobId}/match")
+    @Operation(summary = "Get the authenticated candidate's AI match score for a single job",
+            description = "Reads the candidate's already-computed score from their last POST /ai/jobs/recommend "
+                    + "run. Returns 404 if that job wasn't part of (or predates) that run - the frontend should "
+                    + "treat this as \"no score yet\" and may prompt the candidate to refresh recommendations, "
+                    + "rather than treating it as an error.")
+    public ResponseEntity<ApiResponse<JobRecommendationResponse>> getMatchForJob(
+            @AuthenticationPrincipal AuthenticatedUser principal,
+            @PathVariable UUID jobId) {
+        JobRecommendationResponse response = recommendationService.getMatchForJob(principal.userId(), jobId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

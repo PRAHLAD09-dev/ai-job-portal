@@ -23,6 +23,7 @@ import com.prahlad.aijobportal.aiservice.recommendation.dto.response.MatchBreakd
 import com.prahlad.aijobportal.aiservice.recommendation.entity.JobRecommendation;
 import com.prahlad.aijobportal.aiservice.recommendation.repository.JobRecommendationRepository;
 import com.prahlad.aijobportal.aiservice.recommendation.service.RecommendationService;
+import com.prahlad.aijobportal.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -197,6 +198,27 @@ public class RecommendationServiceImpl implements RecommendationService {
                 candidateId, candidateId, responses.size(), Instant.now()));
 
         return responses;
+    }
+
+    @Override
+    public JobRecommendationResponse getMatchForJob(UUID candidateId, UUID jobId) {
+        JobRecommendation entity = jobRecommendationRepository.findByCandidateIdAndJobId(candidateId, jobId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No AI match score has been generated for this job yet. Generate job recommendations first.",
+                        "jobId", jobId));
+
+        JobDetailSummaryResponse job = jobLookupService.fetchJob(jobId);
+
+        MatchBreakdownResponse breakdown = new MatchBreakdownResponse(
+                entity.getSkillMatch(), entity.getExperienceMatch(), entity.getEducationMatch(),
+                entity.getProjectMatch(), entity.getSalaryMatch(), entity.getLocationMatch());
+
+        List<String> reasoning = entity.getReasoning() == null || entity.getReasoning().isBlank()
+                ? List.of()
+                : List.of(entity.getReasoning().split("\n"));
+
+        return new JobRecommendationResponse(job.id(), job.title(), job.companyName(),
+                entity.getMatchScore(), breakdown, reasoning);
     }
 
     @Override

@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -81,7 +82,10 @@ public class ResumeAnalysisServiceImpl implements ResumeAnalysisService {
 
     @Override
     @Transactional
-    @CacheEvict(cacheNames = RedisCacheConfig.RESUME_ANALYSIS_CACHE, key = "#candidateId")
+    @Caching(evict = {
+            @CacheEvict(cacheNames = RedisCacheConfig.RESUME_ANALYSIS_CACHE, key = "#candidateId"),
+            @CacheEvict(cacheNames = RedisCacheConfig.INTERVIEW_PREP_TOPICS_CACHE, key = "#candidateId")
+    })
     public ResumeAnalysisResponse analyze(UUID candidateId, AnalyzeResumeRequest request) {
         String resumeText = resumeTextExtractionService.extractText(request.resumeUrl());
         String resumeTextHash = sha256(resumeText);
