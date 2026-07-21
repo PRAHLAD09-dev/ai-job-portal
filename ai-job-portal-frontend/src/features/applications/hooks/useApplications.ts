@@ -30,6 +30,29 @@ export function useApplicationTimeline(applicationId: string | undefined) {
   });
 }
 
+/**
+ * INTERIM stopgap for the "Apply Now shown after already applying" bug:
+ * there is no lightweight GET /applications/status/{jobId} on the backend
+ * yet, so this derives applied-status by pulling a large page of the
+ * candidate's own applications and checking client-side. Replace with a
+ * dedicated status endpoint once the backend adds one — this silently
+ * misses applications beyond STATUS_CHECK_PAGE_SIZE for a given candidate.
+ */
+const STATUS_CHECK_PAGE_SIZE = 200;
+
+export function useApplicationForJob(jobId: string | undefined) {
+  const { data, isLoading } = useQuery({
+    queryKey: [...APPLICATIONS_QUERY_KEY, "status-lookup"],
+    queryFn: () =>
+      applicationService.getMyApplications({ page: 0, size: STATUS_CHECK_PAGE_SIZE }).then((res) => res.data),
+    enabled: !!jobId,
+    staleTime: 60 * 1000,
+  });
+
+  const application = data?.content.find((a) => a.jobId === jobId && a.status !== "WITHDRAWN");
+  return { application, isApplied: !!application, isLoading };
+}
+
 /** DAY11 "Apply Methods": fetched before rendering the Apply button so EXTERNAL_APPLY jobs redirect instead of opening the in-app form. */
 export function useApplyInfo(jobId: string | undefined) {
   return useQuery({

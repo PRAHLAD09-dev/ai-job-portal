@@ -343,6 +343,13 @@ export function isConflictError(error: unknown): boolean {
   );
 }
 
+export function isNotFoundError(error: unknown): boolean {
+  return (
+    axios.isAxiosError(error) &&
+    error.response?.status === 404
+  );
+}
+
 export function isServerError(error: unknown): boolean {
   return (
     axios.isAxiosError(error) &&

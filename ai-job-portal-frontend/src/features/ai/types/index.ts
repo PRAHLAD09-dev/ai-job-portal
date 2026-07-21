@@ -138,3 +138,32 @@ export interface LearningRoadmapResponse {
   practiceOrder: string[];
 }
 
+/** Candidate-facing AI Interview Generator — practice questions built from the candidate's own resume. */
+export type PrepDifficulty = "EASY" | "MEDIUM" | "HARD";
+export type PrepQuestionType = "TECHNICAL" | "HR" | "PROJECT_BASED" | "MIXED";
+
+/** GET /ai/interview-prep/topics — skills/projects detected from the candidate's latest resume analysis. */
+export interface DetectedTopicsResponse {
+  skills: string[];
+  projects: string[];
+}
+
+/** POST /ai/interview-prep/generate. selectedTopics should be a subset of (or equal to) DetectedTopicsResponse's topics. */
+export interface GenerateInterviewPrepRequest {
+  selectedTopics: string[];
+  difficulty?: PrepDifficulty | null;
+  questionCount?: number | null;
+  questionType?: PrepQuestionType | null;
+}
+
+/** POST /ai/interview-prep/generate (201) and GET /ai/interview-prep/latest. Questions grouped by topic. */
+export interface InterviewPrepQuestionSetResponse {
+  id: string;
+  selectedTopics: string[];
+  difficulty: string;
+  questionType: string;
+  totalQuestions: number;
+  sections: { topic: string; questions: string[] }[];
+  generatedAt: string;
+}
+

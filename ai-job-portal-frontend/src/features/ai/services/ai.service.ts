@@ -6,7 +6,10 @@ import type {
   CandidateRecommendationResponse,
   CoverLetterRequest,
   CoverLetterResponse,
+  DetectedTopicsResponse,
+  GenerateInterviewPrepRequest,
   GenerateInterviewQuestionsRequest,
+  InterviewPrepQuestionSetResponse,
   InterviewQuestionResponse,
   JobDescriptionRequest,
   JobDescriptionResponse,
@@ -21,6 +24,10 @@ import type {
 export const aiService = {
   recommendJobs: () =>
     apiClient.post<ApiResponse<JobRecommendationResponse[]>>("/ai/jobs/recommend").then((res) => res.data),
+
+  /** GET /ai/jobs/{jobId}/match — single-job score from the candidate's last recommend run. 404 = no score yet. */
+  getJobMatch: (jobId: string) =>
+    apiClient.get<ApiResponse<JobRecommendationResponse>>(`/ai/jobs/${jobId}/match`).then((res) => res.data),
 
   recommendCandidates: (jobId: string) =>
     apiClient
@@ -58,4 +65,26 @@ export const aiService = {
 
   getLearningRoadmap: () =>
     apiClient.get<ApiResponse<LearningRoadmapResponse>>("/ai/learning-roadmap").then((res) => res.data),
+
+  /** GET /ai/interview-prep/topics — 404 ("please analyze your resume first") is a normal empty state. */
+  detectInterviewPrepTopics: () =>
+    apiClient.get<ApiResponse<DetectedTopicsResponse>>("/ai/interview-prep/topics").then((res) => res.data),
+
+  /** POST /ai/interview-prep/generate — also used for "Regenerate" by resubmitting the same request. */
+  generateInterviewPrep: (payload: GenerateInterviewPrepRequest) =>
+    apiClient
+      .post<ApiResponse<InterviewPrepQuestionSetResponse>>("/ai/interview-prep/generate", payload)
+      .then((res) => res.data),
+
+  /** GET /ai/interview-prep/latest — 404 ("none generated yet") is a normal empty state. */
+  getLatestInterviewPrep: () =>
+    apiClient
+      .get<ApiResponse<InterviewPrepQuestionSetResponse>>("/ai/interview-prep/latest")
+      .then((res) => res.data),
+
+  /** GET /ai/interview-prep/{id}/pdf — raw PDF bytes, not the usual ApiResponse<T> envelope. */
+  downloadInterviewPrepPdf: (questionSetId: string) =>
+    apiClient
+      .get<Blob>(`/ai/interview-prep/${questionSetId}/pdf`, { responseType: "blob" })
+      .then((res) => res.data),
 };

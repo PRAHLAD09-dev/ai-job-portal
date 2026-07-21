@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { FileText, LayoutDashboard, Mail, Map, Sparkles, TrendingUp } from "lucide-react";
+import { FileText, LayoutDashboard, Mail, Map, MessageCircleQuestion, Sparkles, TrendingUp } from "lucide-react";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
 import { AiDashboardOverview } from "@/features/ai/components/AiDashboardOverview";
 import { ResumeAnalysisPanel } from "@/features/ai/components/ResumeAnalysisPanel";
@@ -7,12 +7,14 @@ import { JobRecommendations } from "@/features/ai/components/JobRecommendations"
 import { CoverLetterGenerator } from "@/features/ai/components/CoverLetterGenerator";
 import { SkillGapAnalysis } from "@/features/ai/components/SkillGapAnalysis";
 import { LearningRoadmapPanel } from "@/features/ai/components/LearningRoadmapPanel";
+import { InterviewPrepPanel } from "@/features/ai/components/InterviewPrepPanel";
 
 const TAB_ITEMS: TabItem[] = [
   { value: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
   { value: "resume", label: "Resume & ATS", icon: <FileText className="h-4 w-4" /> },
   { value: "jobs", label: "Job Matches", icon: <Sparkles className="h-4 w-4" /> },
   { value: "cover-letter", label: "Cover Letter", icon: <Mail className="h-4 w-4" /> },
+  { value: "interview-prep", label: "Interview Prep", icon: <MessageCircleQuestion className="h-4 w-4" /> },
   { value: "skills", label: "Skill Gap", icon: <TrendingUp className="h-4 w-4" /> },
   { value: "roadmap", label: "Learning Roadmap", icon: <Map className="h-4 w-4" /> },
 ];
@@ -36,6 +38,7 @@ export default function CandidateAiPage() {
       {activeTab === "resume" && <ResumeAnalysisPanel />}
       {activeTab === "jobs" && <JobRecommendations />}
       {activeTab === "cover-letter" && <CoverLetterGenerator />}
+      {activeTab === "interview-prep" && <InterviewPrepPanel onNavigateToResume={() => setActiveTab("resume")} />}
       {activeTab === "skills" && <SkillGapAnalysis />}
       {activeTab === "roadmap" && <LearningRoadmapPanel />}
     </div>

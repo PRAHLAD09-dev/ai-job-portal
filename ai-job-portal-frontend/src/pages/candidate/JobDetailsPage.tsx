@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Bookmark,
@@ -11,19 +11,25 @@ import {
   ExternalLink,
   MapPin,
   Share2,
+  Sparkles,
   Wallet,
   Zap,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { formatEnumLabel } from "@/utils/format";
+import { buildRoute } from "@/constants/routes";
 import { useJobDetails, useSimilarJobs } from "@/features/jobs/hooks/useJobs";
 import { useSaveJob, useSavedJobIds, useUnsaveJob } from "@/features/jobs/hooks/useSavedJobs";
 import { JobCard } from "@/features/jobs/components/JobCard";
 import { ApplyJobDialog } from "@/features/applications/components/ApplyJobDialog";
+import { useApplicationForJob } from "@/features/applications/hooks/useApplications";
+import { useGenerateJobMatch, useJobMatch } from "@/features/ai/hooks/useAi";
+import { MatchBreakdownBars } from "@/features/ai/components/MatchBreakdownBars";
+import { isNotFoundError } from "@/services/api-client";
 import type { JobResponse } from "@/features/jobs/types";
 
 function formatSalaryRange(job: JobResponse): string | null {
@@ -44,6 +50,9 @@ export default function JobDetailsPage() {
   const saveJob = useSaveJob();
   const unsaveJob = useUnsaveJob();
   const [isApplyOpen, setIsApplyOpen] = useState(false);
+  const { application: existingApplication, isApplied } = useApplicationForJob(jobId);
+  const { data: jobMatch, isLoading: isMatchLoading, error: jobMatchError } = useJobMatch(jobId);
+  const generateJobMatch = useGenerateJobMatch(jobId);
 
   // Hooks must run unconditionally on every render (Rules of Hooks), so
   // these are computed before the isLoading/!job early returns below,
@@ -157,6 +166,13 @@ export default function JobDetailsPage() {
               >
                 <ExternalLink className="h-4 w-4" /> Apply on Company Site
               </Button>
+            ) : isApplied && existingApplication ? (
+              <Link
+                to={buildRoute.candidateApplicationDetails(existingApplication.id)}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                <CheckCircle2 className="h-4 w-4 text-primary-600" /> Already Applied
+              </Link>
             ) : (
               <Button size="sm" onClick={() => setIsApplyOpen(true)} disabled={job.status !== "PUBLISHED"}>
                 {job.applyMethod === "QUICK_APPLY" && <Zap className="h-4 w-4" />}
@@ -266,6 +282,52 @@ export default function JobDetailsPage() {
         </div>
 
         <div className="space-y-6">
+          <Card>
+            <div className="flex items-center justify-between">
+              <h2 className="flex items-center gap-1.5 text-base font-semibold">
+                <Sparkles className="h-4 w-4 text-primary-600" /> AI Match Score
+              </h2>
+              {jobMatch && <span className="text-lg font-semibold text-primary-600">{jobMatch.matchScore}%</span>}
+            </div>
+
+            {isMatchLoading ? (
+              <div className="mt-3 space-y-2">
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            ) : jobMatch ? (
+              <div className="mt-3 space-y-3">
+                <MatchBreakdownBars breakdown={jobMatch.matchBreakdown} />
+                {jobMatch.reasoning.length > 0 && (
+                  <ul className="space-y-1.5 border-t border-[hsl(var(--border-color))] pt-3">
+                    {jobMatch.reasoning.map((point, index) => (
+                      <li key={index} className="flex gap-2 text-xs text-[hsl(var(--muted))]">
+                        <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary-600" /> {point}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ) : isNotFoundError(jobMatchError) ? (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm text-[hsl(var(--muted))]">
+                  Run AI Match to see how well your profile fits this job.
+                </p>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => generateJobMatch.mutate()}
+                  isLoading={generateJobMatch.isPending}
+                >
+                  <Sparkles className="h-4 w-4" /> Generate My Match Score
+                </Button>
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-[hsl(var(--muted))]">Match score is unavailable right now.</p>
+            )}
+          </Card>
+
           {job.skills.length > 0 && (
             <Card>
               <h2 className="text-base font-semibold">Skills</h2>
